@@ -1,7 +1,12 @@
 import numpy as np
+import torch
 
-x = np.array([1, 2, 3, 4, 5])
-print(x)
-print(x.shape)
+z = torch.tensor([0.0, 1.0, 5.0, 1.0, 1.0, 1.0])
 
-print(np.where(x == 4)[0][0])
+x1 = z[:3]
+m1 = z[3:]
+
+dist = torch.distributions.Normal(x1, m1)
+
+print(dist.sample())
+
