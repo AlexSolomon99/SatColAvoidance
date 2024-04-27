@@ -37,8 +37,8 @@ tca_time_lapse_max_abs_val = env.observation_space['tca_time_lapse'].high[0]
 data_preprocessing = data_processing.ObservationProcessing(satellite_data=env.unwrapped.satellite,
                                                            tca_time_lapse_max_abs_val=tca_time_lapse_max_abs_val)
 
-normalised_obs = data_preprocessing.transform_observations(game_env_obs=obs)
-print(f"Normalised obs: {normalised_obs}")
+flattened_data = data_preprocessing.transform_observations(game_env_obs=obs)
+print(f"Flattened obs: {flattened_data}")
 
 sys.exit()
 

@@ -28,11 +28,28 @@ class ObservationProcessing:
 
     def transform_observations(self, game_env_obs: dict):
         # normalise the values of the observation
+        normalised_obs_dict = self.normalise_observation_dict(game_env_obs=game_env_obs)
+
+        # flatten the normalised observation dictionary
+        flattened_data = self.flatten_observation_dict(observation_dict=normalised_obs_dict)
+
+        return flattened_data
+
+    def normalise_observation_dict(self, game_env_obs: dict):
+        # normalise the values of the observation
         normalised_obs_dict = {}
         for key_ in self.obs_key_normaliser_dict:
             normalised_obs_dict[key_] = self.obs_key_normaliser_dict[key_](game_env_obs, key_)
 
         return normalised_obs_dict
+
+    def flatten_observation_dict(self, observation_dict: dict):
+        flattened_observation = []
+
+        for key_ in self.obs_key_normaliser_dict:
+            flattened_observation.append(observation_dict[key_].flatten())
+
+        return np.concatenate(flattened_observation)
 
     def normalise_primary_current_pv(self, game_env_obs: dict, env_obs_key: str):
         """
