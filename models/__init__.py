@@ -1,2 +1,2 @@
-from models.NN_NeuralNet import CartPolePolicy
 from models.NU_NeuralUtils import NeuralNetUtils
+from models.NN_NeuralNet import SatColAvoidPolicy
