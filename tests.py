@@ -1,12 +1,13 @@
 import numpy as np
 import torch
 
-z = torch.tensor([0.0, 1.0, 5.0, 1.0, 1.0, 1.0])
+x = torch.tensor([2, 3, 4, 5])
+scores_list = torch.tensor([])
 
-x1 = z[:3]
-m1 = z[3:]
+for idx, elem in enumerate(x):
+    new_num = elem.item() + 5
+    new_num_tensor = torch.Tensor([new_num])
+    scores_list = torch.cat((scores_list, new_num_tensor))
 
-dist = torch.distributions.Normal(x1, m1)
-
-print(dist.sample())
-
+print(x)
+print(scores_list)
