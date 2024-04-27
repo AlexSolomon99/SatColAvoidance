@@ -30,7 +30,7 @@ env = gym.make('gym_satellite_ca:gym_satellite_ca/CollisionAvoidance-v0',
 nn_conf = {
     "init_layer": 4,
     "hidden_layer": 16,
-    "output_layer": 2
+    "output_layer": 6
 }
 
 # instantiate the policy
