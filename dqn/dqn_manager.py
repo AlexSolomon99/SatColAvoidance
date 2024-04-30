@@ -1,14 +1,12 @@
 import os
 import numpy as np
 import torch
-import random
 import gymnasium as gym
-import math
-import matplotlib.pyplot as plt
 import copy
+import datetime
 
 from models.dqn_nn import QNetwork
-from dqn_replay_memory import Transition, ReplayMemory
+from dqn_replay_memory import ReplayMemory
 import utils
 import dataprocessing
 import dqn_utils
@@ -75,7 +73,7 @@ nn_conf = {
     "init_layer": 6968,
     "hidden_layer_1": 1000,
     "hidden_layer_2": 100,
-    "output_layer": 6
+    "output_layer": 3
 }
 
 # create a policy network and a target network, which is a mirror of it
@@ -90,24 +88,35 @@ optimizer = torch.optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
 memory = ReplayMemory(capacity=10000)
 
 # set up the utilities class
-dqn_utils_class = dqn_utils.DQNUtils(observation_processing=data_preprocessing, memory=memory, device=device,
+dqn_utils_class = dqn_utils.DQNUtils(observation_processing=data_preprocessing, memory=memory, optimizer=optimizer,
+                                     device=device, batch_size=BATCH_SIZE, gamma=GAMMA,
                                      eps_start=EPS_START, eps_end=EPS_END, eps_decay=EPS_DECAY, tau=TAU)
 
+# set up training variables
 steps_done = 0
 num_episodes = 100
-train_total_losses = torch.tensor([], device=device)
-train_rewards_sum_list = torch.tensor([], device=device)
-eval_rewards_sum_list = torch.tensor([], device=device)
 max_eval_reward_sum = -np.inf
 best_policy = copy.deepcopy(policy_net)
 
+print(f"{datetime.datetime.now()} - Started training")
 for i_episode in range(num_episodes):
-    print(f"Episode {i_episode}")
+    print(f"{datetime.datetime.now()} - Episode {i_episode}")
+    steps_done, raw_rewards = dqn_utils_class.play_game_once(game_env=env,
+                                                             policy_net=policy_net,
+                                                             target_net=target_net,
+                                                             steps_done=steps_done)
+    rewards_sum = raw_rewards.sum()
+    print(f"{datetime.datetime.now()} - Epoch {i_episode} - Train Reward MeanSum: {rewards_sum.item()}")
 
+    if rewards_sum.item() > max_eval_reward_sum:
+        max_eval_reward_sum = rewards_sum.item()
 
+        # save the best model
+        best_model = copy.deepcopy(policy_net)
+        utils.save_best_model(best_model=best_model,
+                              best_model_path=best_model_path,
+                              record_dict_path=dqn_record_dict_path,
+                              model_record_dict=model_record_dict,
+                              model_record_last_idx=model_record_last_idx,
+                              max_eval_reward_sum=max_eval_reward_sum.item())
 
-print("Completed!")
-print(f"Episode Durations: {episode_durations}")
-
-plt.plot(np.arange(len(episode_durations)), episode_durations)
-plt.show()
