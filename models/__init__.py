@@ -1,2 +1,1 @@
-from models.NU_NeuralUtils import NeuralNetUtils
-from models.NN_NeuralNet import SatColAvoidPolicy
+from models.policy_methods_nn import SatColAvoidPolicy

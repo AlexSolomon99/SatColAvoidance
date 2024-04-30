@@ -22,6 +22,8 @@ init_sat = utils.get_sat_data_env(sat_data_config)
 
 env = gymnasium.make('gym_satellite_ca:gym_satellite_ca/CollisionAvoidance-v0', satellite=init_sat)
 
+print("Random action: ", env.action_space.sample())
+
 print(env.observation_space)
 print(env.action_space)
 
