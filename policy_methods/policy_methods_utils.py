@@ -32,7 +32,7 @@ class PolicyMethodsUtils:
         while not done:
             # transform the observations and perform inference
             flat_obs = self.observation_processing.transform_observations(game_env_obs=obs)
-            model_obs = torch.from_numpy(flat_obs).to(device=self.device)
+            model_obs = torch.from_numpy(flat_obs).to(device=self.device, dtype=torch.float)
             action_parameters = policy(model_obs)
 
             # get the mean and std from the action parameters
@@ -42,12 +42,14 @@ class PolicyMethodsUtils:
             # compute the action and the log prob from the normal distribution
             action_normal_distribution = torch.distributions.Normal(action_mean, action_std)
             action = action_normal_distribution.sample().to(device=self.device)
+
             log_prob = action_normal_distribution.log_prob(action).to(device=self.device)
 
-            obs, reward, done, truncated, info = game_env.step(action.item())
+            obs, reward, done, truncated, info = game_env.step(action.tolist())
 
-            raw_rewards = torch.cat((raw_rewards, reward))
-            log_probs = torch.cat((log_probs, log_prob.reshape(1)))
+            raw_rewards = torch.cat((raw_rewards, torch.tensor([reward]).to(device=self.device)))
+
+            log_probs = torch.cat((log_probs, log_prob.unsqueeze(0)))
 
         # get the list of scores for each action
         scores_per_action = self.compute_discount_rate_reward(list_of_rewards=raw_rewards)
@@ -77,8 +79,8 @@ class PolicyMethodsUtils:
                                                                        train=True,
                                                                        optimizer=optimizer)
 
-            list_of_losses = torch.cat((list_of_losses, loss))
-            list_of_raw_rewards = torch.cat((list_of_raw_rewards, raw_rewards))
+            list_of_losses = torch.cat((list_of_losses, torch.tensor([loss]).to(device=self.device)))
+            list_of_raw_rewards = torch.cat((list_of_raw_rewards, raw_rewards.unsqueeze(0)))
 
         return list_of_losses, list_of_raw_rewards
 
@@ -93,20 +95,20 @@ class PolicyMethodsUtils:
                                                                        train=False,
                                                                        optimizer=optimizer)
 
-            list_of_raw_rewards = torch.cat((list_of_raw_rewards, raw_rewards))
+            list_of_raw_rewards = torch.cat((list_of_raw_rewards, raw_rewards.unsqueeze(0)))
 
         return list_of_raw_rewards
 
-    def compute_discount_rate_reward(self, list_of_rewards: torch.tensor, discount_rate=0.95):
+    def compute_discount_rate_reward(self, list_of_rewards: torch.tensor, discount_rate=0.99):
         scores_list = torch.tensor([], device=self.device)
         for idx, reward in enumerate(list_of_rewards):
-            current_score = self.compute_individual_score(list_of_rewards=list_of_rewards[idx:].copy(),
+            current_score = self.compute_individual_score(list_of_rewards=list_of_rewards[idx:],
                                                           discount_rate=discount_rate)
-            scores_list = torch.cat((scores_list, current_score))
+            scores_list = torch.cat((scores_list, torch.tensor([current_score]).to(device=self.device)))
 
-        return torch.tensor(scores_list)
+        return scores_list
 
-    def compute_individual_score(self, list_of_rewards: torch.tensor, discount_rate: float) -> torch.Tensor:
+    def compute_individual_score(self, list_of_rewards: torch.tensor, discount_rate: float) -> float:
         """
         Function which computes the score of the current action, given as input the list of rewards starting from the
         current action onwards and the discount rate
@@ -120,13 +122,13 @@ class PolicyMethodsUtils:
         score = 0
         for idx, elem in enumerate(list_of_rewards):
             score += elem.item() * discount_rate ** idx
-        return torch.Tensor([score], device=self.device)
+        return score
 
     @staticmethod
     def update_policy(returns, log_prob_actions, optimizer):
         returns = returns.detach()
 
-        loss = - (returns * log_prob_actions).sum()
+        loss = - torch.mean(torch.sum(log_prob_actions * returns.unsqueeze(1), dim=1))
 
         optimizer.zero_grad()
 

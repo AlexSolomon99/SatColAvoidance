@@ -1,3 +1,4 @@
+import os
 import datetime
 import json
 import copy
@@ -10,22 +11,42 @@ sys.path.append(r'E:\Alex\UniBuc\MasterThesis\gym-satellite-ca')
 from gym_satellite_ca.envs import satDataClass
 
 
-def read_config_json(config_path: str):
-    f = open(config_path, "r")
+def read_json(json_path: str):
+    f = open(json_path, "r")
     data_config = json.load(f)
     f.close()
 
     return data_config
 
 
+def save_json(dict_: dict, json_path: str):
+    with open(json_path, "w") as outfile:
+        json.dump(dict_, outfile)
+
+
 def get_sat_data_env(sat_data_config_path: str):
-    sat_data_config = read_config_json(config_path=sat_data_config_path)
+    sat_data_config = read_json(json_path=sat_data_config_path)
 
     iss_satellite = satDataClass.SatelliteData(**sat_data_config)
     iss_satellite.change_angles_to_radians()
     iss_satellite.set_random_tran()
 
     return copy.deepcopy(iss_satellite)
+
+
+def save_best_model(best_model: torch.nn.Module,
+                    best_model_path: str,
+                    record_dict_path: str,
+                    model_record_dict: dict,
+                    model_record_last_idx: int,
+                    max_eval_reward_sum: int):
+
+    torch.save(best_model.state_dict(), best_model_path)
+    model_record_dict[model_record_last_idx + 1] = {
+        'path': best_model_path,
+        'max_eval_reward_sum': max_eval_reward_sum
+    }
+    save_json(dict_=model_record_dict, json_path=record_dict_path)
 
 
 def play_game_manually(game_env):

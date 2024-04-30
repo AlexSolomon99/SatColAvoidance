@@ -1,13 +1,12 @@
 import numpy as np
 import torch
 
-x = torch.tensor([2, 3, 4, 5])
-scores_list = torch.tensor([])
+log_probs = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])  # Shape: (batch_size, 3)
+rewards = torch.tensor([10.0, 0.1])
 
-for idx, elem in enumerate(x):
-    new_num = elem.item() + 5
-    new_num_tensor = torch.Tensor([new_num])
-    scores_list = torch.cat((scores_list, new_num_tensor))
+print(log_probs * rewards.unsqueeze(1))
+print(torch.sum(log_probs * rewards.unsqueeze(1), dim=1))
 
-print(x)
-print(scores_list)
+loss = torch.mean(torch.sum(log_probs * rewards.unsqueeze(1), dim=1))
+
+print(loss)
