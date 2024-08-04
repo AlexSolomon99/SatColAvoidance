@@ -36,12 +36,25 @@ def get_sat_data_env(sat_data_config_path: str):
 
 def save_best_model(best_model: torch.nn.Module,
                     best_model_path: str,
+                    best_model_dir_path: str,
+                    model_conf: dict,
+                    optimizer,
+                    optimizer_lr: float,
+                    epoch: int,
+                    loss,
                     record_dict_path: str,
                     model_record_dict: dict,
                     model_record_last_idx: int,
                     max_eval_reward_sum: int):
+    torch.save({
+        'epoch': epoch,
+        'model_state_dict': best_model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'loss': loss,
+        'optimizer_lr': optimizer_lr
+    }, best_model_path)
+    save_json(dict_=model_conf, json_path=os.path.join(best_model_dir_path, "model_conf.json"))
 
-    torch.save(best_model.state_dict(), best_model_path)
     model_record_dict[model_record_last_idx + 1] = {
         'path': best_model_path,
         'max_eval_reward_sum': max_eval_reward_sum
