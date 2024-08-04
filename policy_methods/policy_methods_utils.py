@@ -65,7 +65,7 @@ class PolicyMethodsUtils:
     def instantiate_loss_fnc_optimiser(policy: torch.nn.Module, lr=0.01):
         optimizer = torch.optim.Adam(lr=lr, params=policy.parameters())
 
-        return optimizer
+        return optimizer, lr
 
     def train_policy(self, policy: torch.nn.Module, game_env, optimizer, num_train_iterations=500):
         policy.train()

@@ -46,7 +46,10 @@ if not os.path.isfile(policy_methods_record_dict_path):
 else:
     model_record_dict = utils.read_json(json_path=policy_methods_record_dict_path)
     model_record_last_idx = len(model_record_dict.keys())
-best_model_path = os.path.join(POLICY_METHODS_MODELS, f"{MODEL_NAME}_{model_record_last_idx + 1}")
+best_model_dir_path = os.path.join(POLICY_METHODS_MODELS, f"{MODEL_NAME}_{model_record_last_idx + 1}_dir")
+best_model_path = os.path.join(best_model_dir_path, f"{MODEL_NAME}_{model_record_last_idx + 1}")
+if not os.path.isdir(best_model_dir_path):
+    os.mkdir(best_model_dir_path)
 
 # setting up the satellite data and init config of the environment
 init_sat = utils.get_sat_data_env(sat_data_config)
@@ -71,10 +74,10 @@ nn_conf = {
 # instantiate the policy and its utilities
 nn_policy = models.policy_methods_nn.SatColAvoidPolicy(conf=nn_conf).to(device=device)
 policy_utils = PolicyMethodsUtils(observation_processing=data_preprocessing, device=device)
-optimizer = policy_utils.instantiate_loss_fnc_optimiser(policy=nn_policy)
+optimizer, optimizer_lr = policy_utils.instantiate_loss_fnc_optimiser(policy=nn_policy)
 
 # set up training variables
-train_eval_steps = 100
+train_eval_steps = 1
 
 train_total_losses = torch.tensor([], device=device)
 train_rewards_sum_list = torch.tensor([], device=device)
@@ -102,6 +105,12 @@ for steps in range(train_eval_steps):
         best_model = copy.deepcopy(nn_policy)
         utils.save_best_model(best_model=best_model,
                               best_model_path=best_model_path,
+                              best_model_dir_path=best_model_dir_path,
+                              model_conf=nn_conf,
+                              optimizer=optimizer,
+                              optimizer_lr=optimizer_lr,
+                              epoch=steps,
+                              loss=train_losses[-1],
                               record_dict_path=policy_methods_record_dict_path,
                               model_record_dict=model_record_dict,
                               model_record_last_idx=model_record_last_idx,
