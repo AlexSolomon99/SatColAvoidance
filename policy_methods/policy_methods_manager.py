@@ -77,7 +77,7 @@ policy_utils = PolicyMethodsUtils(observation_processing=data_preprocessing, dev
 optimizer, optimizer_lr = policy_utils.instantiate_loss_fnc_optimiser(policy=nn_policy)
 
 # set up training variables
-train_eval_steps = 1
+train_eval_steps = 1000
 
 train_total_losses = torch.tensor([], device=device)
 train_rewards_sum_list = torch.tensor([], device=device)
