@@ -131,11 +131,14 @@ class PolicyEvaluator:
         }
 
         # create the plots directory
-        self.create_plots_directory()
+        plots_dir_path = self.create_plots_directory()
 
         for num_idx in range(num_runs):
+            # play the game
             raw_rewards, final_info = self.play_game_once(game_env=game_env,
                                                           policy=policy)
+
+            # store the statistics on the goals achieved by the model
             current_goals_status = {
                 "collision_avoided": final_info["collision_avoided"],
                 "returned_to_init_orbit": final_info["returned_to_init_orbit"],
@@ -146,6 +149,10 @@ class PolicyEvaluator:
             goals_overall_status_dict["individual_run_goals"].update(current_goals_status)
             goals_overall_status_dict = self.updated_goals_dict(goals_overall_status_dict,
                                                                 current_goals_status)
+
+            # create the evaluation plots
+            self.create_evaluation_plots(game_final_info=final_info, plots_path_dir=plots_dir_path,
+                                         plot_prefix=num_idx)
 
         utils.save_json(dict_=goals_overall_status_dict,
                         json_path=os.path.join(self.model_evaluation_path, "goals_evaluation.json"))
@@ -167,6 +174,8 @@ class PolicyEvaluator:
                 except Exception as e:
                     print('Failed to delete %s. Reason: %s' % (file_path, e))
 
+        return plots_dir_path
+
     @staticmethod
     def updated_goals_dict(goals_overall_status_dict, current_goals_status):
         if current_goals_status["collision_avoided"] is True:
@@ -181,3 +190,69 @@ class PolicyEvaluator:
                                                          goals_overall_status_dict["num_runs"])
 
         return goals_overall_status_dict
+
+    def create_evaluation_plots(self, game_final_info, plots_path_dir, plot_prefix):
+        # get the relevant raw data from the game info
+        primary_init_seq = game_final_info["primary_init_sequence"]
+        secondary_init_seq = game_final_info["secondary_init_sequence"]
+        historical_actions = game_final_info["historical_actions"]
+        historical_primary_sequence = game_final_info["historical_primary_sequence"]
+        hist_primary_at_collision_states = game_final_info["hist_primary_at_collision_states"]
+        collision_distance = game_final_info["collision_distance"]
+        initial_orbit_radius_bound = game_final_info["initial_orbit_radius_bound"]
+        max_altitude_diff_allowed = game_final_info["max_altitude_diff_allowed"]
+
+        # get the difference between initial orbit states and final orbit states
+        diff_init_final = self.compute_sequence_of_distances_between_state_seq(primary_init_seq,
+                                                                               historical_primary_sequence)
+
+        # get the difference between the primary and secondary satellites
+        diff_primary_secondary = self.compute_sequence_of_distances_between_state_seq(hist_primary_at_collision_states,
+                                                                                      secondary_init_seq)
+
+        # get the policy action data
+        action_means = [np.mean(x) for x in historical_actions]
+        actions_x = [x[0] for x in historical_actions]
+        actions_y = [x[1] for x in historical_actions]
+        actions_z = [x[2] for x in historical_actions]
+
+        # compute the plot for the differences between initial and final states
+        init_final_plot, init_final_ax = plt.subplots()
+        x_axis_data = np.arange(len(diff_init_final))
+
+        init_final_ax.plot(x_axis_data, diff_init_final)
+        init_final_ax.set_title("Differences between initial and modified orbit")
+        init_final_plot.savefig(os.path.join(plots_path_dir, f"{plot_prefix}_Init_Final_Orbit_Diff.png"))
+
+        # compute the plot for the differences between initial and final states
+        collision_plot, collision_ax = plt.subplots()
+        x_axis_data = np.arange(len(diff_primary_secondary))
+
+        collision_ax.plot(x_axis_data, diff_primary_secondary)
+        collision_ax.set_title("Differences between primary and secondary satellites")
+        collision_plot.savefig(os.path.join(plots_path_dir, f"{plot_prefix}_Collision_Plot.png"))
+
+        # compute the actions plots
+        actions_plot, axs = plt.subplots(2, 3)
+        x_axis_data = np.arange(len(action_means))
+
+        axs[0, 1].plot(x_axis_data, action_means)
+        axs[1, 0].plot(x_axis_data, actions_x)
+        axs[1, 1].plot(x_axis_data, actions_y)
+        axs[1, 2].plot(x_axis_data, actions_z)
+
+        actions_plot.savefig(os.path.join(plots_path_dir, f"{plot_prefix}_Actions_Plot.png"))
+
+    @staticmethod
+    def compute_dist_between_states(primary_sc_state: np.array,
+                                    secondary_sc_state: np.array) -> float:
+        return np.linalg.norm(primary_sc_state - secondary_sc_state)
+
+    @staticmethod
+    def compute_sequence_of_distances_between_state_seq(primary_sc_state_seq: np.array,
+                                                        secondary_sc_state_seq: np.array) -> np.array:
+        seq_of_distances = []
+        for idx, orb_pos_primary in enumerate(primary_sc_state_seq):
+            seq_of_distances.append(np.linalg.norm(orb_pos_primary[:3] - secondary_sc_state_seq[idx][:3]))
+
+        return np.array(seq_of_distances)
