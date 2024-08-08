@@ -13,7 +13,7 @@ class ObservationProcessing:
     # Constants Definition
     # Environment observation keys
     PRIMARY_CURRENT_PV = "primary_current_pv"
-    PRIMARY_SC_STATE_SEQ = "primary_sc_state_seq"
+    # PRIMARY_SC_STATE_SEQ = "primary_sc_state_seq"
     SECONDARY_SC_STATE_SEQ = "secondary_sc_state_seq"
     TCA_TIME_LAPSE = "tca_time_lapse"
     PRIMARY_SC_MASS = "primary_sc_mass"
@@ -110,7 +110,7 @@ class ObservationProcessing:
     def get_obskey_normaliser_dict(self):
         return {
             self.PRIMARY_CURRENT_PV: self.normalise_primary_current_pv,
-            self.PRIMARY_SC_STATE_SEQ: self.normalise_pv_state_seq,
+            # self.PRIMARY_SC_STATE_SEQ: self.normalise_pv_state_seq,
             self.SECONDARY_SC_STATE_SEQ: self.normalise_pv_state_seq,
             self.TCA_TIME_LAPSE: self.normalise_tca_time_lapse,
             self.PRIMARY_SC_MASS: self.normalise_sat_mass,

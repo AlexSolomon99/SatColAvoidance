@@ -21,7 +21,7 @@ def read_json(json_path: str):
 
 def save_json(dict_: dict, json_path: str):
     with open(json_path, "w") as outfile:
-        json.dump(dict_, outfile)
+        json.dump(dict_, outfile, indent=4)
 
 
 def get_sat_data_env(sat_data_config_path: str):
