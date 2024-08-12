@@ -146,7 +146,7 @@ class PolicyEvaluator:
                 "fuel_used_perc": final_info["fuel_used_perc"],
                 "raw_rewards": sum(raw_rewards.cpu().numpy().tolist())
             }
-            goals_overall_status_dict["individual_run_goals"].update(current_goals_status)
+            goals_overall_status_dict["individual_run_goals"][num_idx] = current_goals_status
             goals_overall_status_dict = self.updated_goals_dict(goals_overall_status_dict,
                                                                 current_goals_status)
 
@@ -195,9 +195,13 @@ class PolicyEvaluator:
         # get the relevant raw data from the game info
         primary_init_seq = game_final_info["primary_init_sequence"]
         secondary_init_seq = game_final_info["secondary_init_sequence"]
+        init_kepl_elements = game_final_info["init_kepl_elements"]
+
         historical_actions = game_final_info["historical_actions"]
         historical_primary_sequence = game_final_info["historical_primary_sequence"]
         hist_primary_at_collision_states = game_final_info["hist_primary_at_collision_states"]
+        hist_kepl_elements = game_final_info["hist_kepl_elements"]
+
         collision_distance = game_final_info["collision_distance"]
         initial_orbit_radius_bound = game_final_info["initial_orbit_radius_bound"]
         max_altitude_diff_allowed = game_final_info["max_altitude_diff_allowed"]
@@ -209,6 +213,11 @@ class PolicyEvaluator:
         # get the difference between the primary and secondary satellites
         diff_primary_secondary = self.compute_sequence_of_distances_between_state_seq(hist_primary_at_collision_states,
                                                                                       secondary_init_seq)
+
+        # get the difference between the historical keplerian elements and the initial values
+        diff_sma, diff_ecc, diff_inc, diff_par, diff_ran = self.get_diff_between_hist_kepl_elem_and_initial_ones(
+            historical_kepl_elem=hist_kepl_elements, init_kepl_elem=init_kepl_elements
+        )
 
         # get the policy action data
         action_means = [np.mean(x) for x in historical_actions]
@@ -223,6 +232,7 @@ class PolicyEvaluator:
         init_final_ax.plot(x_axis_data, diff_init_final)
         init_final_ax.set_title("Differences between initial and modified orbit")
         init_final_plot.savefig(os.path.join(plots_path_dir, f"{plot_prefix}_Init_Final_Orbit_Diff.png"))
+        init_final_plot.close()
 
         # compute the plot for the differences between initial and final states
         collision_plot, collision_ax = plt.subplots()
@@ -231,6 +241,7 @@ class PolicyEvaluator:
         collision_ax.plot(x_axis_data, diff_primary_secondary)
         collision_ax.set_title("Differences between primary and secondary satellites")
         collision_plot.savefig(os.path.join(plots_path_dir, f"{plot_prefix}_Collision_Plot.png"))
+        collision_plot.close()
 
         # compute the actions plots
         actions_plot, axs = plt.subplots(2, 3)
@@ -242,6 +253,20 @@ class PolicyEvaluator:
         axs[1, 2].plot(x_axis_data, actions_z)
 
         actions_plot.savefig(os.path.join(plots_path_dir, f"{plot_prefix}_Actions_Plot.png"))
+        actions_plot.close()
+
+        # compute the keplerian elements plots
+        keplerian_plot, axs = plt.subplots(5, 1)
+        x_axis_data = np.arange(len(diff_sma))
+
+        axs[0].plot(x_axis_data, diff_sma)
+        axs[1].plot(x_axis_data, diff_ecc)
+        axs[2].plot(x_axis_data, diff_inc)
+        axs[3].plot(x_axis_data, diff_par)
+        axs[4].plot(x_axis_data, diff_ran)
+
+        keplerian_plot.savefig(os.path.join(plots_path_dir, f"{plot_prefix}_Keplerian_Diff.png"))
+        keplerian_plot.close()
 
     @staticmethod
     def compute_dist_between_states(primary_sc_state: np.array,
@@ -256,3 +281,15 @@ class PolicyEvaluator:
             seq_of_distances.append(np.linalg.norm(orb_pos_primary[:3] - secondary_sc_state_seq[idx][:3]))
 
         return np.array(seq_of_distances)
+
+    @staticmethod
+    def get_diff_between_hist_kepl_elem_and_initial_ones(historical_kepl_elem, init_kepl_elem):
+        num_comp_steps = len(historical_kepl_elem)
+        diff_sma = [historical_kepl_elem[x][0] - init_kepl_elem[0] for x in range(num_comp_steps)]
+        diff_ecc = [historical_kepl_elem[x][1] - init_kepl_elem[1] for x in range(num_comp_steps)]
+        diff_inc = [historical_kepl_elem[x][2] - init_kepl_elem[2] for x in range(num_comp_steps)]
+        diff_par = [historical_kepl_elem[x][3] - init_kepl_elem[3] for x in range(num_comp_steps)]
+        diff_ran = [historical_kepl_elem[x][4] - init_kepl_elem[4] for x in range(num_comp_steps)]
+
+        return diff_sma, diff_ecc, diff_inc, diff_par, diff_ran
+
