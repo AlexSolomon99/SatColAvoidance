@@ -24,7 +24,8 @@ device = torch.device('cuda')
 MODEL_NAME = "dqn_model"
 
 # constants
-BATCH_SIZE = 128
+ACTION_SPACE = [-1, 0, 1]
+BATCH_SIZE = 526
 GAMMA = 0.99
 EPS_START = 0.9
 EPS_END = 0.05
@@ -54,7 +55,10 @@ if not os.path.isfile(dqn_record_dict_path):
 else:
     model_record_dict = utils.read_json(json_path=dqn_record_dict_path)
     model_record_last_idx = len(model_record_dict.keys())
-best_model_path = os.path.join(DQN_METHODS_MODELS, f"{MODEL_NAME}_{model_record_last_idx + 1}")
+best_model_dir_path = os.path.join(DQN_METHODS_MODELS, f"{MODEL_NAME}_{model_record_last_idx + 1}_dir")
+best_model_path = os.path.join(best_model_dir_path, f"{MODEL_NAME}_{model_record_last_idx + 1}")
+if not os.path.isdir(best_model_dir_path):
+    os.mkdir(best_model_dir_path)
 
 # setting up the satellite data and init config of the environment
 init_sat = utils.get_sat_data_env(sat_data_config)
@@ -70,10 +74,10 @@ data_preprocessing = dataprocessing.data_processing.ObservationProcessing(satell
 
 # set up neural net configuration
 nn_conf = {
-    "init_layer": 6968,
-    "hidden_layer_1": 1000,
-    "hidden_layer_2": 100,
-    "output_layer": 3
+    "init_layer": 56,
+    "hidden_layer_1": 500,
+    "hidden_layer_2": 200,
+    "output_layer": len(ACTION_SPACE) ** 3
 }
 
 # create a policy network and a target network, which is a mirror of it
@@ -90,23 +94,30 @@ memory = ReplayMemory(capacity=10000)
 # set up the utilities class
 dqn_utils_class = dqn_utils.DQNUtils(observation_processing=data_preprocessing, memory=memory, optimizer=optimizer,
                                      device=device, batch_size=BATCH_SIZE, gamma=GAMMA,
-                                     eps_start=EPS_START, eps_end=EPS_END, eps_decay=EPS_DECAY, tau=TAU)
+                                     eps_start=EPS_START, eps_end=EPS_END, eps_decay=EPS_DECAY, tau=TAU,
+                                     local_action_space=ACTION_SPACE)
 
 # set up training variables
 steps_done = 0
-num_episodes = 100
+num_episodes = 2
 max_eval_reward_sum = -np.inf
 best_policy = copy.deepcopy(policy_net)
+losses_rewards_dict = {"Losses": [], "Rewards": []}
 
 print(f"{datetime.datetime.now()} - Started training")
 for i_episode in range(num_episodes):
     print(f"{datetime.datetime.now()} - Episode {i_episode}")
-    steps_done, raw_rewards = dqn_utils_class.play_game_once(game_env=env,
-                                                             policy_net=policy_net,
-                                                             target_net=target_net,
-                                                             steps_done=steps_done)
+    steps_done, raw_rewards, losses_tensor = dqn_utils_class.play_game_once(game_env=env,
+                                                                            policy_net=policy_net,
+                                                                            target_net=target_net,
+                                                                            steps_done=steps_done)
     rewards_sum = raw_rewards.sum()
-    print(f"{datetime.datetime.now()} - Epoch {i_episode} - Train Reward MeanSum: {rewards_sum.item()}")
+    losses_mean = losses_tensor.mean()
+
+    losses_rewards_dict["Losses"].append(losses_mean)
+    losses_rewards_dict["Rewards"].append(rewards_sum)
+    print(f"{datetime.datetime.now()} - Epoch {i_episode} - Train Reward MeanSum: {rewards_sum.item()} - "
+          f"Loss Mean: {losses_mean.item()}")
 
     if rewards_sum.item() > max_eval_reward_sum:
         max_eval_reward_sum = rewards_sum.item()
@@ -115,8 +126,15 @@ for i_episode in range(num_episodes):
         best_model = copy.deepcopy(policy_net)
         utils.save_best_model(best_model=best_model,
                               best_model_path=best_model_path,
+                              best_model_dir_path=best_model_dir_path,
+                              model_conf=nn_conf,
+                              optimizer=optimizer,
+                              optimizer_lr=LR,
+                              epoch=i_episode,
+                              loss=losses_mean.item(),
                               record_dict_path=dqn_record_dict_path,
                               model_record_dict=model_record_dict,
                               model_record_last_idx=model_record_last_idx,
-                              max_eval_reward_sum=max_eval_reward_sum.item())
+                              max_eval_reward_sum=max_eval_reward_sum)
 
+utils.save_json(dict_=losses_rewards_dict, json_path=os.path.join(best_model_dir_path, "Losses_Reward_dict.json"))
