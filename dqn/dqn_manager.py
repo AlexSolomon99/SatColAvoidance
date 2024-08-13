@@ -99,7 +99,7 @@ dqn_utils_class = dqn_utils.DQNUtils(observation_processing=data_preprocessing, 
 
 # set up training variables
 steps_done = 0
-num_episodes = 2
+num_episodes = 5000
 max_eval_reward_sum = -np.inf
 best_policy = copy.deepcopy(policy_net)
 losses_rewards_dict = {"Losses": [], "Rewards": []}
@@ -114,8 +114,8 @@ for i_episode in range(num_episodes):
     rewards_sum = raw_rewards.sum()
     losses_mean = losses_tensor.mean()
 
-    losses_rewards_dict["Losses"].append(losses_mean)
-    losses_rewards_dict["Rewards"].append(rewards_sum)
+    losses_rewards_dict["Losses"].append(losses_mean.item())
+    losses_rewards_dict["Rewards"].append(rewards_sum.item())
     print(f"{datetime.datetime.now()} - Epoch {i_episode} - Train Reward MeanSum: {rewards_sum.item()} - "
           f"Loss Mean: {losses_mean.item()}")
 

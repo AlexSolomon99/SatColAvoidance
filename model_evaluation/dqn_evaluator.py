@@ -19,7 +19,9 @@ sys.path.append(r'E:\Alex\UniBuc\MasterThesis\gym-satellite-ca')
 from gym_satellite_ca.envs import satDataClass
 
 
-class PolicyEvaluator:
+class DQNEvaluator:
+
+    ACTION_SPACE = [-1, 0, 1]
 
     def __init__(self, device, sat_data_config, model_dir_path, model_file_path,
                  model_evaluation_path):
@@ -29,6 +31,7 @@ class PolicyEvaluator:
         # environment setup attributes
         self.sat_data_config = sat_data_config
         self.game_env, self.data_preprocessing = self.set_up_environment(sat_data_config=self.sat_data_config)
+        self.full_action_space = self.get_full_action_space()
 
         # model setup attributes
         self.model_dir_path = model_dir_path
@@ -72,8 +75,8 @@ class PolicyEvaluator:
         # loading the model intended for evaluation
         checkpoint = torch.load(model_file_path)
 
-        policy = models.policy_methods_nn.SatColAvoidPolicy(conf=model_conf).to(device=device)
-        optimizer = torch.optim.Adam(lr=checkpoint['optimizer_lr'], params=policy.parameters())
+        policy = models.dqn_nn.QNetwork(conf=model_conf).to(device=device)
+        optimizer = torch.optim.AdamW(lr=checkpoint['optimizer_lr'], params=policy.parameters())
 
         policy.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
@@ -100,16 +103,12 @@ class PolicyEvaluator:
             # transform the observations and perform inference
             flat_obs = self.data_preprocessing.transform_observations(game_env_obs=obs)
             model_obs = torch.from_numpy(flat_obs).to(device=self.device, dtype=torch.float)
-            action_parameters = policy(model_obs)
 
-            # get the mean and std from the action parameters
-            action_mean = action_parameters[:3]
-            action_std = action_parameters[3:]
+            # select an action
+            action, action_idx = (self.full_action_space[policy(model_obs).argmax()],
+                                  policy(model_obs).argmax().view(1, 1))
 
-            # compute the action and the log prob from the normal distribution
-            action_normal_distribution = torch.distributions.Normal(action_mean, action_std)
-            action = action_normal_distribution.sample().to(device=self.device)
-
+            # apply the action and get the next state
             obs, reward, done, truncated, info = game_env.step(action.tolist())
             if done:
                 final_info = info
@@ -117,6 +116,19 @@ class PolicyEvaluator:
             raw_rewards = torch.cat((raw_rewards, torch.tensor([reward]).to(device=self.device)))
 
         return raw_rewards, final_info
+
+    def get_full_action_space(self):
+        all_actions = []
+
+        for elem_1 in self.ACTION_SPACE:
+            action_1 = [elem_1]
+            for elem_2 in self.ACTION_SPACE:
+                action_2 = action_1 + [elem_2]
+                for elem_3 in self.ACTION_SPACE:
+                    current_action = action_2 + [elem_3]
+                    all_actions.append(torch.tensor(current_action, device=self.device, dtype=torch.float))
+
+        return all_actions
 
     def perform_evaluation(self, game_env, policy, num_runs=10):
         # instantiate the dictionary containing the general status of the execution

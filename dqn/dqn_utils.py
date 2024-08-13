@@ -159,6 +159,3 @@ class DQNUtils:
                     all_actions.append(torch.tensor(current_action, device=self.device, dtype=torch.float))
 
         return all_actions
-
-    def action_selector(self, action_idx: int):
-        pass
