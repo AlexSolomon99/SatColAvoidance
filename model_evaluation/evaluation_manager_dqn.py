@@ -16,8 +16,8 @@ device = torch.device('cuda')
 # constant paths
 BASE = r"E:\Alex\UniBuc\MasterThesis\src"
 DATA_PATH = os.path.join(BASE, "data")
-MODEL_DIR_PATH = os.path.join(BASE, "recorded_models", "dqn_models", "dqn_model_4_dir")
-MODEL_FILE_PATH = os.path.join(MODEL_DIR_PATH, "dqn_model_4")
+MODEL_DIR_PATH = os.path.join(BASE, "recorded_models", "dqn_models", "dqn_model_5_dir")
+MODEL_FILE_PATH = os.path.join(MODEL_DIR_PATH, "dqn_model_5")
 sat_data_config = os.path.join(DATA_PATH, "default_sat_data_config.json")
 
 print(f"{datetime.datetime.now()} - Evaluation started!")

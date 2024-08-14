@@ -72,13 +72,14 @@ class DQNUtils:
                 loss_item = loss.item()
                 losses_tensor = torch.cat((losses_tensor, torch.tensor([loss_item], device=self.device)))
 
-            # soft update of the target network's weights
-            target_net_state_dict = target_net.state_dict()
-            policy_net_state_dict = policy_net.state_dict()
-            for key in policy_net_state_dict:
-                target_net_state_dict[key] = (policy_net_state_dict[key] * self.tau + target_net_state_dict[key] *
-                                              (1 - self.tau))
-            target_net.load_state_dict(target_net_state_dict)
+            # soft update of the target network's weights once every 1000 steps
+            if (steps_done + 1) % 1000 == 0:
+                target_net_state_dict = target_net.state_dict()
+                policy_net_state_dict = policy_net.state_dict()
+                for key in policy_net_state_dict:
+                    target_net_state_dict[key] = (policy_net_state_dict[key] * self.tau + target_net_state_dict[key] *
+                                                  (1 - self.tau))
+                target_net.load_state_dict(target_net_state_dict)
 
             if done:
                 return steps_done, raw_rewards, losses_tensor
@@ -131,7 +132,7 @@ class DQNUtils:
         # state value or 0 in case the state was final.
         next_state_values = torch.zeros(self.batch_size, device=self.device)
         with torch.no_grad():
-            next_state_values[non_final_mask] = target_net(non_final_next_states).max(1)[0]
+            next_state_values[non_final_mask] = target_net(non_final_next_states).max(1).values
         # Compute the expected Q values
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
 
@@ -142,7 +143,7 @@ class DQNUtils:
         loss.backward()
 
         # inplace gradient clipping
-        torch.nn.utils.clip_grad_value_(policy_net.parameters(), 100)
+        torch.nn.utils.clip_grad_norm_(policy_net.parameters(), max_norm=5.0)
         self.optimizer.step()
 
         return loss
