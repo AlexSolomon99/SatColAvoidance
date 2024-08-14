@@ -25,7 +25,7 @@ MODEL_NAME = "dqn_model"
 
 # constants
 ACTION_SPACE = [-1, 0, 1]
-BATCH_SIZE = 526
+BATCH_SIZE = 128
 GAMMA = 0.99
 EPS_START = 0.9
 EPS_END = 0.05
@@ -75,8 +75,8 @@ data_preprocessing = dataprocessing.data_processing.ObservationProcessing(satell
 # set up neural net configuration
 nn_conf = {
     "init_layer": 56,
-    "hidden_layer_1": 500,
-    "hidden_layer_2": 200,
+    "hidden_layer_1": 128,
+    "hidden_layer_2": 64,
     "output_layer": len(ACTION_SPACE) ** 3
 }
 
@@ -99,7 +99,7 @@ dqn_utils_class = dqn_utils.DQNUtils(observation_processing=data_preprocessing, 
 
 # set up training variables
 steps_done = 0
-num_episodes = 5000
+num_episodes = 2000
 max_eval_reward_sum = -np.inf
 best_policy = copy.deepcopy(policy_net)
 losses_rewards_dict = {"Losses": [], "Rewards": []}
@@ -116,7 +116,7 @@ for i_episode in range(num_episodes):
 
     losses_rewards_dict["Losses"].append(losses_mean.item())
     losses_rewards_dict["Rewards"].append(rewards_sum.item())
-    print(f"{datetime.datetime.now()} - Epoch {i_episode} - Train Reward MeanSum: {rewards_sum.item()} - "
+    print(f"{datetime.datetime.now()} - Epoch {i_episode} - Train Reward Sum: {rewards_sum.item()} - "
           f"Loss Mean: {losses_mean.item()}")
 
     if rewards_sum.item() > max_eval_reward_sum:
