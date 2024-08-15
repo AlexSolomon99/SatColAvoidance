@@ -3,6 +3,8 @@ import datetime
 import json
 import copy
 import torch
+import gymnasium as gym
+import dataprocessing
 
 import sys
 
@@ -32,6 +34,23 @@ def get_sat_data_env(sat_data_config_path: str):
     iss_satellite.set_random_tran()
 
     return copy.deepcopy(iss_satellite)
+
+
+def set_up_environment(sat_data_config):
+    # setting up the satellite data and init config of the environment
+    init_sat = get_sat_data_env(sat_data_config)
+
+    # setting up the environment
+    env = gym.make('gym_satellite_ca:gym_satellite_ca/CollisionAvoidance-v0',
+                   satellite=init_sat)
+
+    # set up the observation processing class
+    tca_time_lapse_max_abs_val = env.observation_space['tca_time_lapse'].high[0]
+    data_preprocessing = dataprocessing.data_processing.ObservationProcessing(
+        satellite_data=env.unwrapped.satellite,
+        tca_time_lapse_max_abs_val=tca_time_lapse_max_abs_val)
+
+    return env, data_preprocessing
 
 
 def save_best_model(best_model: torch.nn.Module,

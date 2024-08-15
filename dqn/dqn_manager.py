@@ -102,7 +102,7 @@ dqn_utils_class = dqn_utils.DQNUtils(observation_processing=data_preprocessing, 
 
 # set up training variables
 steps_done = 0
-num_episodes = 3000
+num_episodes = 1
 max_eval_reward_sum = -np.inf
 best_policy = copy.deepcopy(policy_net)
 losses_rewards_dict = {"Losses": [], "Rewards": []}
