@@ -89,10 +89,10 @@ def play_game_manually(game_env):
     return rewards, observations, actions
 
 
-def play_constant_game_manually(game_env, constant_action):
+def play_constant_game_manually(game_env, constant_action, reset_options=None):
 
     # resetting the game and getting the firs obs
-    obs, _ = game_env.reset()
+    obs, _ = game_env.reset(options=reset_options)
 
     # condition for the game to be over
     done = False
@@ -116,5 +116,5 @@ def play_constant_game_manually(game_env, constant_action):
         actions.append(action)
         observations.append(obs)
 
-    return rewards, observations, actions
+    return rewards, observations, actions, info
 
