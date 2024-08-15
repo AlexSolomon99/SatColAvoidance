@@ -26,14 +26,14 @@ class DQNUtils:
         self.full_action_space = self.get_full_action_space()
 
     def play_game_once(self, game_env, policy_net: torch.nn.Module, target_net: torch.nn.Module,
-                       steps_done: int):
+                       steps_done: int, reset_options: dict):
 
         # initialise the reward tensor
         raw_rewards = torch.tensor([], device=self.device)
         losses_tensor = torch.tensor([], device=self.device)
 
         # initialize the environment and get its state
-        obs, _ = game_env.reset()
+        obs, _ = game_env.reset(options=reset_options)
         # transform the observations
         flat_state = self.observation_processing.transform_observations(game_env_obs=obs)
         state = torch.from_numpy(flat_state).to(device=self.device, dtype=torch.float)

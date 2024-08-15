@@ -32,6 +32,9 @@ EPS_END = 0.05
 EPS_DECAY = 500000
 TAU = 0.005
 LR = 1e-4
+RESET_OPTIONS = {
+    "propagator": "numerical"
+}
 
 # constant paths
 BASE = r"E:\Alex\UniBuc\MasterThesis\src"
@@ -99,7 +102,7 @@ dqn_utils_class = dqn_utils.DQNUtils(observation_processing=data_preprocessing, 
 
 # set up training variables
 steps_done = 0
-num_episodes = 2000
+num_episodes = 3000
 max_eval_reward_sum = -np.inf
 best_policy = copy.deepcopy(policy_net)
 losses_rewards_dict = {"Losses": [], "Rewards": []}
@@ -110,7 +113,8 @@ for i_episode in range(num_episodes):
     steps_done, raw_rewards, losses_tensor = dqn_utils_class.play_game_once(game_env=env,
                                                                             policy_net=policy_net,
                                                                             target_net=target_net,
-                                                                            steps_done=steps_done)
+                                                                            steps_done=steps_done,
+                                                                            reset_options=RESET_OPTIONS)
     rewards_sum = raw_rewards.sum()
     losses_mean = losses_tensor.mean()
 
