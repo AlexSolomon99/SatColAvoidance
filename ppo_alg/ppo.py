@@ -84,10 +84,11 @@ class PPOBuffer:
         return {k: torch.as_tensor(v, dtype=torch.float32) for k, v in data.items()}
 
 
-def ppo(env, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
+def ppo(env, data_preprocessing, obs_dim, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
         steps_per_epoch=4000, epochs=50, gamma=0.99, clip_ratio=0.2, pi_lr=3e-4,
-        vf_lr=1e-3, train_pi_iters=80, train_v_iters=80, lam=0.97, max_ep_len=1000,
-        target_kl=0.01, logger_kwargs=dict(), save_freq=10):
+        vf_lr=1e-3, train_pi_iters=80, train_v_iters=80, lam=0.97, max_ep_len=100000,
+        target_kl=0.01, logger_kwargs=dict(), save_freq=1, model_record_dict=dict(),
+        model_record_last_idx=0, record_dict_path=""):
     """
     Proximal Policy Optimization (by clipping),
 
@@ -204,11 +205,10 @@ def ppo(env, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
     np.random.seed(seed)
 
     # Instantiate environment
-    obs_dim = env.observation_space.shape
     act_dim = env.action_space.shape
 
     # Create actor-critic module
-    ac = actor_critic(env.observation_space, env.action_space, **ac_kwargs)
+    ac = actor_critic(obs_dim, env.action_space, **ac_kwargs)
 
     # Sync params across processes
     sync_params(ac)
@@ -296,14 +296,15 @@ def ppo(env, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
     # Main loop: collect experience in env and update/log each epoch
     for epoch in range(epochs):
         for t in range(local_steps_per_epoch):
-            a, v, logp = ac.step(torch.as_tensor(o, dtype=torch.float32))
+            flat_state = data_preprocessing.transform_observations(game_env_obs=o)
+            a, v, logp = ac.step(torch.as_tensor(flat_state, dtype=torch.float32))
 
-            next_o, r, d, truncated, info = env.step(a)
+            next_o, r, d, truncated, info = env.step(a.tolist())
             ep_ret += r
             ep_len += 1
 
             # save and log
-            buf.store(o, a, r, v, logp)
+            buf.store(flat_state, a, r, v, logp)
             logger.store(VVals=v)
 
             # Update obs (critical!)
@@ -318,7 +319,8 @@ def ppo(env, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
                     print('Warning: trajectory cut off by epoch at %d steps.' % ep_len, flush=True)
                 # if trajectory didn't reach terminal state, bootstrap value target
                 if timeout or epoch_ended:
-                    _, v, _ = ac.step(torch.as_tensor(o, dtype=torch.float32))
+                    flat_state = data_preprocessing.transform_observations(game_env_obs=o)
+                    _, v, _ = ac.step(torch.as_tensor(flat_state, dtype=torch.float32))
                 else:
                     v = 0
                 buf.finish_path(v)
@@ -330,7 +332,11 @@ def ppo(env, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 
         # Save model
         if (epoch % save_freq == 0) or (epoch == epochs - 1):
-            logger.save_state({'env': env}, None)
+            logger.save_state(pi_model=ac.pi, v_model=ac.v,
+                              pi_optimizer=pi_optimizer, vf_optimizer=vf_optimizer, epoch=epoch,
+                              pi_lr=pi_lr, vf_lr=vf_lr, models_kwargs=ac_kwargs, model_record_dict=model_record_dict,
+                              model_record_last_idx=model_record_last_idx, record_dict_path=record_dict_path,
+                              state_dict={'env': env}, itr=None)
 
         # Perform PPO update!
         update()

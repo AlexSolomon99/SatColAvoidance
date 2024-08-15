@@ -12,6 +12,7 @@ import numpy as np
 import torch
 import os.path as osp, time, atexit, os
 import warnings
+import utils
 from ppo_alg.mpi_tools import proc_id, mpi_statistics_scalar
 from ppo_alg.ppo_utils import convert_json
 
@@ -133,7 +134,9 @@ class Logger:
             with open(osp.join(self.output_dir, "config.json"), 'w') as out:
                 out.write(output)
 
-    def save_state(self, state_dict, itr=None):
+    def save_state(self, pi_model, v_model, pi_optimizer, vf_optimizer, epoch,
+                   pi_lr, vf_lr, models_kwargs, state_dict, model_record_dict,
+                   model_record_last_idx, record_dict_path, itr=None):
         """
         Saves the state of an experiment.
 
@@ -153,15 +156,36 @@ class Logger:
                 describe the current state of training.
 
             itr: An int, or None. Current iteration of training.
+            :param models_kwargs:
+            :param itr:
+            :param state_dict:
+            :param vf_lr:
+            :param pi_lr:
+            :param epoch:
+            :param vf_optimizer:
+            :param v_model:
+            :param pi_model:
+            :param pi_optimizer:
         """
         if proc_id() == 0:
-            fname = 'vars.pkl' if itr is None else 'vars%d.pkl' % itr
-            try:
-                joblib.dump(state_dict, osp.join(self.output_dir, fname))
-            except:
-                self.log('Warning: could not pickle state_dict.', color='red')
             if hasattr(self, 'pytorch_saver_elements'):
                 self._pytorch_simple_save(itr)
+                fpath = "ppo_model"
+                torch.save({
+                    'epoch': epoch,
+                    "pi_model_state_dict": pi_model.state_dict(),
+                    "vf_model_state_dict": v_model.state_dict(),
+                    'pi_optimizer_state_dict': pi_optimizer.state_dict(),
+                    'vf_optimizer_state_dict': vf_optimizer.state_dict(),
+                    'pi_optimizer_lr': pi_lr,
+                    'vf_optimizer_lr': vf_lr
+                }, osp.join(self.output_dir, fpath))
+                utils.save_json(dict_=models_kwargs, json_path=os.path.join(self.output_dir, "model_kwargs_conf.json"))
+
+                model_record_dict[model_record_last_idx + 1] = {
+                    'path': self.output_dir
+                }
+                utils.save_json(dict_=model_record_dict, json_path=record_dict_path)
 
     def setup_pytorch_saver(self, what_to_save):
         """
