@@ -85,8 +85,8 @@ class PPOBuffer:
 
 
 def ppo(env, data_preprocessing, obs_dim, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
-        steps_per_epoch=4000, epochs=50, gamma=0.99, clip_ratio=0.2, pi_lr=3e-4,
-        vf_lr=1e-3, train_pi_iters=80, train_v_iters=80, lam=0.97, max_ep_len=100000,
+        steps_per_epoch=4000, epochs=50, buffer_max_size=4000, gamma=0.99, clip_ratio=0.2, pi_lr=3e-4,
+        vf_lr=1e-3, train_pi_iters=80, train_v_iters=80, lam=0.97, max_ep_len=1000000000,
         target_kl=0.01, logger_kwargs=dict(), save_freq=1, model_record_dict=dict(),
         model_record_last_idx=0, record_dict_path=""):
     """
@@ -219,7 +219,7 @@ def ppo(env, data_preprocessing, obs_dim, actor_critic=core.MLPActorCritic, ac_k
 
     # Set up experience buffer
     local_steps_per_epoch = int(steps_per_epoch / num_procs())
-    buf = PPOBuffer(obs_dim, act_dim, local_steps_per_epoch, gamma, lam)
+    buf = PPOBuffer(obs_dim, act_dim, buffer_max_size, gamma, lam)
 
     # Set up function for computing PPO policy loss
     def compute_loss_pi(data):
@@ -292,46 +292,51 @@ def ppo(env, data_preprocessing, obs_dim, actor_critic=core.MLPActorCritic, ac_k
     start_time = time.time()
     o, _ = env.reset()
     ep_ret, ep_len = 0, 0
+    max_avg_ep_ret = -np.inf
 
     # Main loop: collect experience in env and update/log each epoch
     for epoch in range(epochs):
+
+        current_steps_ep = 0
+        current_avg_ep_ret = 0
+
         for t in range(local_steps_per_epoch):
-            flat_state = data_preprocessing.transform_observations(game_env_obs=o)
-            a, v, logp = ac.step(torch.as_tensor(flat_state, dtype=torch.float32))
+            terminal = False
 
-            next_o, r, d, truncated, info = env.step(a.tolist())
-            ep_ret += r
-            ep_len += 1
+            while not terminal:
+                current_steps_ep += 1
+                flat_state = data_preprocessing.transform_observations(game_env_obs=o)
+                a, v, logp = ac.step(torch.as_tensor(flat_state, dtype=torch.float32))
 
-            # save and log
-            buf.store(flat_state, a, r, v, logp)
-            logger.store(VVals=v)
+                next_o, r, d, truncated, info = env.step(a.tolist())
+                ep_ret += r
+                ep_len += 1
 
-            # Update obs (critical!)
-            o = next_o
+                # save and log
+                buf.store(flat_state, a, r, v, logp)
+                logger.store(VVals=v)
 
-            timeout = ep_len == max_ep_len
-            terminal = d or timeout or truncated
-            epoch_ended = t == local_steps_per_epoch - 1
+                # Update obs (critical!)
+                o = next_o
 
-            if terminal or epoch_ended:
-                if epoch_ended and not (terminal):
-                    print('Warning: trajectory cut off by epoch at %d steps.' % ep_len, flush=True)
-                # if trajectory didn't reach terminal state, bootstrap value target
-                if timeout or epoch_ended:
-                    flat_state = data_preprocessing.transform_observations(game_env_obs=o)
-                    _, v, _ = ac.step(torch.as_tensor(flat_state, dtype=torch.float32))
-                else:
-                    v = 0
-                buf.finish_path(v)
+                terminal = d or truncated
+
                 if terminal:
+                    v = 0
+                    buf.finish_path(v)
+
                     # only save EpRet / EpLen if trajectory finished
                     logger.store(EpRet=ep_ret, EpLen=ep_len)
-                o, _ = env.reset()
-                ep_ret, ep_len = 0, 0
+                    current_avg_ep_ret += ep_ret
+
+                    o, _ = env.reset()
+                    ep_ret, ep_len = 0, 0
+
+        current_avg_ep_ret /= local_steps_per_epoch
 
         # Save model
-        if (epoch % save_freq == 0) or (epoch == epochs - 1):
+        if (epoch % save_freq == 0) or (epoch == epochs - 1) or current_avg_ep_ret > max_avg_ep_ret:
+            max_avg_ep_ret = current_avg_ep_ret
             logger.save_state(pi_model=ac.pi, v_model=ac.v,
                               pi_optimizer=pi_optimizer, vf_optimizer=vf_optimizer, epoch=epoch,
                               pi_lr=pi_lr, vf_lr=vf_lr, models_kwargs=ac_kwargs, model_record_dict=model_record_dict,
