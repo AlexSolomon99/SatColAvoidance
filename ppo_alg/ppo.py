@@ -84,7 +84,7 @@ class PPOBuffer:
         return {k: torch.as_tensor(v, dtype=torch.float32) for k, v in data.items()}
 
 
-def ppo(env, data_preprocessing, obs_dim, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
+def ppo(env, obs_dim, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
         steps_per_epoch=4000, epochs=50, gamma=0.99, clip_ratio=0.2, pi_lr=3e-4,
         vf_lr=1e-3, train_pi_iters=80, train_v_iters=80, lam=0.97, max_ep_len=10000,
         target_kl=0.01, logger_kwargs=dict(), save_freq=1, model_record_dict=dict(),
@@ -296,15 +296,14 @@ def ppo(env, data_preprocessing, obs_dim, actor_critic=core.MLPActorCritic, ac_k
     # Main loop: collect experience in env and update/log each epoch
     for epoch in range(epochs):
         for t in range(local_steps_per_epoch):
-            flat_state = data_preprocessing.transform_observations(game_env_obs=o)
-            a, v, logp = ac.step(torch.as_tensor(flat_state, dtype=torch.float32))
+            a, v, logp = ac.step(torch.as_tensor(o, dtype=torch.float32))
 
             next_o, r, d, truncated, info = env.step(a.tolist())
             ep_ret += r
             ep_len += 1
 
             # save and log
-            buf.store(flat_state, a, r, v, logp)
+            buf.store(o, a, r, v, logp)
             logger.store(VVals=v)
 
             # Update obs (critical!)
@@ -319,8 +318,7 @@ def ppo(env, data_preprocessing, obs_dim, actor_critic=core.MLPActorCritic, ac_k
                     print('Warning: trajectory cut off by epoch at %d steps.' % ep_len, flush=True)
                 # if trajectory didn't reach terminal state, bootstrap value target
                 if timeout or epoch_ended:
-                    flat_state = data_preprocessing.transform_observations(game_env_obs=o)
-                    _, v, _ = ac.step(torch.as_tensor(flat_state, dtype=torch.float32))
+                    _, v, _ = ac.step(torch.as_tensor(o, dtype=torch.float32))
                 else:
                     v = 0
                 buf.finish_path(v)

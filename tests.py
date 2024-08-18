@@ -1,21 +1,16 @@
 import orekit
 from orekit.pyhelpers import setup_orekit_curdir
 from org.orekit.data import DataProvidersManager, ZipJarCrawler
-from org.orekit.frames import FramesFactory
+from org.orekit.frames import FramesFactory, LOFType
 from org.orekit.orbits import KeplerianOrbit, OrbitType, PositionAngle
-from org.orekit.bodies import CelestialBodyFactory
-from org.orekit.utils import Constants, PVCoordinates
+from org.orekit.utils import Constants
 from org.orekit.propagation.analytical.keplerian import KeplerianPropagator
 from org.orekit.propagation.numerical import NumericalPropagator
-from org.orekit.propagation.numerical import ForceModel
 from org.orekit.forces.maneuvers import ConstantThrustManeuver
 from org.orekit.time import AbsoluteDate, TimeScalesFactory
 from org.hipparchus.ode.nonstiff import DormandPrince853Integrator
 from org.orekit.forces.gravity.potential import HolmesFeatherstoneAttractionModel
-from org.orekit.forces.gravity import NewtonianAttraction
 from org.orekit.forces.gravity import GravityFieldFactory
-from org.orekit.frames import Frame
-from org.orekit.orbits import Orbit
 from org.orekit.propagation.sampling import OrekitFixedStepHandler
 from math import radians, degrees
 
@@ -69,13 +64,14 @@ propagator.addForceModel(HolmesFeatherstoneAttractionModel(inertial_frame, gravi
 # Set initial state
 propagator.setInitialState(propagator.getInitialState().withOrbit(initial_orbit))
 
-# Define the radial thrust maneuver
-thrust = 0.5  # Thrust (N)
-isp = 300.0   # Specific Impulse (s)
-direction = [1.0, 0.0, 0.0]  # Radial direction in LVLH frame (X-axis)
+# Define the local orbital frame (LVLH)
+local_orbital_frame = LOFType.LVLH_CCSDS
 
-# Create thrust maneuver
-maneuver = ConstantThrustManeuver(inertial_frame, epoch, thrust, isp, direction)
+# Define the radial thrust maneuver direction in the LVLH frame
+direction = [1.0, 0.0, 0.0]  # Radial direction (X-axis in LVLH frame)
+
+# Create thrust maneuver in the LVLH frame
+maneuver = ConstantThrustManeuver(local_orbital_frame, epoch, thrust, isp, direction)
 
 # Add maneuver to the propagator
 propagator.addForceModel(maneuver)
