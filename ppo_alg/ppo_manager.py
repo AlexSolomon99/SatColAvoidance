@@ -11,12 +11,11 @@ import ppo_alg.core as core
 num_cpu = 1
 seed = 0
 # 5 games per epoch
-steps_per_epoch = 2
-epochs = 2
+steps_per_epoch = 5 * 1151
+epochs = 1000
 gamma = 0.99
 MODEL_NAME = "ppo_model"
 obs_dim = 56
-buffer_max_size = steps_per_epoch * 1151
 
 # constant paths
 BASE = r"E:\Alex\UniBuc\MasterThesis\src"
@@ -54,6 +53,6 @@ logger_kwargs = setup_logger_kwargs(exp_name=experiment_name,
 
 # run the ppo_alg algorithm
 ppo(env=env, data_preprocessing=data_preprocessing, obs_dim=obs_dim, actor_critic=core.MLPActorCritic, gamma=gamma,
-    seed=seed, steps_per_epoch=steps_per_epoch, epochs=epochs, buffer_max_size=buffer_max_size,
+    seed=seed, steps_per_epoch=steps_per_epoch, epochs=epochs,
     logger_kwargs=logger_kwargs, save_freq=1, model_record_dict=model_record_dict,
     model_record_last_idx=model_record_last_idx, record_dict_path=ppo_record_dict_path)
