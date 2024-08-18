@@ -53,6 +53,17 @@ def set_up_environment(sat_data_config):
     return env, data_preprocessing
 
 
+def set_up_kepl_environment(sat_data_config):
+    # setting up the satellite data and init config of the environment
+    init_sat = get_sat_data_env(sat_data_config)
+
+    # setting up the environment
+    env = gym.make('gym_satellite_ca:gym_satellite_ca/CollisionAvoidance-v0',
+                   satellite=init_sat)
+
+    return env
+
+
 def save_best_model(best_model: torch.nn.Module,
                     best_model_path: str,
                     best_model_dir_path: str,
@@ -130,6 +141,10 @@ def play_constant_game_manually(game_env, constant_action, reset_options=None):
 
         action = constant_action
         obs, reward, done, truncated, info = game_env.step(action)
+        print(f"Current observation: {obs}")
+        print()
+
+        done = done or truncated
 
         rewards.append(reward)
         actions.append(action)
