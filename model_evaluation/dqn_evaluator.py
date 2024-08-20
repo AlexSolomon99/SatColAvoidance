@@ -50,12 +50,12 @@ class DQNEvaluator:
                        satellite=init_sat)
 
         # set up the observation processing class
-        tca_time_lapse_max_abs_val = env.observation_space['tca_time_lapse'].high[0]
-        data_preprocessing = dataprocessing.data_processing.ObservationProcessing(
-            satellite_data=env.unwrapped.satellite,
-            tca_time_lapse_max_abs_val=tca_time_lapse_max_abs_val)
+        # tca_time_lapse_max_abs_val = env.observation_space['tca_time_lapse'].high[0]
+        # data_preprocessing = dataprocessing.data_processing.ObservationProcessing(
+        #     satellite_data=env.unwrapped.satellite,
+        #     tca_time_lapse_max_abs_val=tca_time_lapse_max_abs_val)
 
-        return env, data_preprocessing
+        return env, None
 
     @staticmethod
     def instantiate_model(device, model_dir_path, model_file_path, model_evaluation_path):
@@ -101,8 +101,8 @@ class DQNEvaluator:
 
         while not done:
             # transform the observations and perform inference
-            flat_obs = self.data_preprocessing.transform_observations(game_env_obs=obs)
-            model_obs = torch.from_numpy(flat_obs).to(device=self.device, dtype=torch.float)
+            # flat_obs = self.data_preprocessing.transform_observations(game_env_obs=obs)
+            model_obs = torch.from_numpy(obs).to(device=self.device, dtype=torch.float)
 
             # select an action
             action, action_idx = (self.full_action_space[policy(model_obs).argmax()],
@@ -110,6 +110,7 @@ class DQNEvaluator:
 
             # apply the action and get the next state
             obs, reward, done, truncated, info = game_env.step(action.tolist())
+            done = done or truncated
             if done:
                 final_info = info
 
@@ -136,7 +137,6 @@ class DQNEvaluator:
             "num_runs": num_runs,
             "collision_avoided": 0,
             "returned_to_init_orbit": 0,
-            "drifted_out_of_bounds": 0,
             "fuel_used_perc": 0.0,
             "raw_rewards_sum": 0.0,
             "individual_run_goals": {}
@@ -146,6 +146,7 @@ class DQNEvaluator:
         plots_dir_path = self.create_plots_directory()
 
         for num_idx in range(num_runs):
+            print(f"Step {num_idx}")
             # play the game
             raw_rewards, final_info = self.play_game_once(game_env=game_env,
                                                           policy=policy)
@@ -154,7 +155,6 @@ class DQNEvaluator:
             current_goals_status = {
                 "collision_avoided": final_info["collision_avoided"],
                 "returned_to_init_orbit": final_info["returned_to_init_orbit"],
-                "drifted_out_of_bounds": final_info["drifted_out_of_bounds"],
                 "fuel_used_perc": final_info["fuel_used_perc"],
                 "raw_rewards": sum(raw_rewards.cpu().numpy().tolist())
             }
@@ -194,8 +194,6 @@ class DQNEvaluator:
             goals_overall_status_dict["collision_avoided"] += 1
         if current_goals_status["returned_to_init_orbit"] is True:
             goals_overall_status_dict["returned_to_init_orbit"] += 1
-        if current_goals_status["drifted_out_of_bounds"] is True:
-            goals_overall_status_dict["drifted_out_of_bounds"] += 1
         goals_overall_status_dict["fuel_used_perc"] += (current_goals_status["fuel_used_perc"] /
                                                         goals_overall_status_dict["num_runs"])
         goals_overall_status_dict["raw_rewards_sum"] += (current_goals_status["raw_rewards"] /
@@ -205,31 +203,27 @@ class DQNEvaluator:
 
     def create_evaluation_plots(self, game_final_info, plots_path_dir, plot_prefix):
         # get the relevant raw data from the game info
-        primary_init_seq = game_final_info["primary_init_sequence"]
-        secondary_init_seq = game_final_info["secondary_init_sequence"]
         init_kepl_elements = game_final_info["init_kepl_elements"]
 
         historical_actions = game_final_info["historical_actions"]
-        historical_primary_sequence = game_final_info["historical_primary_sequence"]
         hist_primary_at_collision_states = game_final_info["hist_primary_at_collision_states"]
-        hist_kepl_elements = game_final_info["hist_kepl_elements"]
+        hist_kepl_elements = game_final_info["historical_primary_sequence"]
 
         collision_distance = game_final_info["collision_distance"]
         initial_orbit_radius_bound = game_final_info["initial_orbit_radius_bound"]
         max_altitude_diff_allowed = game_final_info["max_altitude_diff_allowed"]
-
-        # get the difference between initial orbit states and final orbit states
-        diff_init_final = self.compute_sequence_of_distances_between_state_seq(primary_init_seq,
-                                                                               historical_primary_sequence)
-
-        # get the difference between the primary and secondary satellites
-        diff_primary_secondary = self.compute_sequence_of_distances_between_state_seq(hist_primary_at_collision_states,
-                                                                                      secondary_init_seq)
+        min_collision_distances = game_final_info["min_collision_distances"]
+        collision_idx = game_final_info["collision_idx"]
 
         # get the difference between the historical keplerian elements and the initial values
         diff_sma, diff_ecc, diff_inc, diff_par, diff_ran = self.get_diff_between_hist_kepl_elem_and_initial_ones(
             historical_kepl_elem=hist_kepl_elements, init_kepl_elem=init_kepl_elements
         )
+        # normalise some keplerian elements
+        diff_ecc = [1e6 * x for x in diff_ecc]
+        diff_inc = [1e5 * x for x in diff_inc]
+        diff_par = [1e5 * x for x in diff_par]
+        diff_ran = [1e5 * x for x in diff_ran]
 
         # get the policy action data
         action_means = [np.mean(x) for x in historical_actions]
@@ -237,48 +231,100 @@ class DQNEvaluator:
         actions_y = [x[1] for x in historical_actions]
         actions_z = [x[2] for x in historical_actions]
 
-        # compute the plot for the differences between initial and final states
-        init_final_plot, init_final_ax = plt.subplots()
-        x_axis_data = np.arange(len(diff_init_final))
+        # compute the min distances plots
+        min_dist_plot, ax = plt.subplots(1, 1, figsize=(15, 5))
+        x_axis_data = np.arange(len(min_collision_distances[:collision_idx]))
+        x_label = 'Time steps [x10 min]'
 
-        init_final_ax.plot(x_axis_data, diff_init_final)
-        init_final_ax.set_title("Differences between initial and modified orbit")
-        init_final_plot.savefig(os.path.join(plots_path_dir, f"{plot_prefix}_Init_Final_Orbit_Diff.png"))
-        plt.close(init_final_plot)
+        ax.plot(x_axis_data, min_collision_distances[:collision_idx], color='navy')
 
-        # compute the plot for the differences between initial and final states
-        collision_plot, collision_ax = plt.subplots()
-        x_axis_data = np.arange(len(diff_primary_secondary))
+        # Add labels and titles
+        ax.set_xlabel(x_label)
+        ax.set_ylabel('Absolute Distance [m]')
+        ax.axvline(x=collision_idx, color='k', linestyle='--', label="TCA")
+        ax.legend(loc='upper left', fontsize=20)
+        ax.set_title('Estimated Minimum Collision Distance over time', fontsize=16)
+        ax.grid(True)
 
-        collision_ax.plot(x_axis_data, diff_primary_secondary)
-        collision_ax.set_title("Differences between primary and secondary satellites")
-        collision_plot.savefig(os.path.join(plots_path_dir, f"{plot_prefix}_Collision_Plot.png"))
-        plt.close(collision_plot)
+        min_dist_plot.savefig(os.path.join(plots_path_dir, f"{plot_prefix}_Min_Coll_Dist.png"))
+        plt.close(min_dist_plot)
 
         # compute the actions plots
-        actions_plot, axs = plt.subplots(2, 3)
+        actions_plot, axs = plt.subplots(1, 3, figsize=(15, 5))
         x_axis_data = np.arange(len(action_means))
+        x_label = 'Time steps [x10 min]'
 
-        axs[0, 1].plot(x_axis_data, action_means)
-        axs[1, 0].plot(x_axis_data, actions_x)
-        axs[1, 1].plot(x_axis_data, actions_y)
-        axs[1, 2].plot(x_axis_data, actions_z)
+        axs[0].plot(x_axis_data, actions_x, color='r')
+        axs[1].plot(x_axis_data, actions_y, color='g')
+        axs[2].plot(x_axis_data, actions_z, color='b')
+
+        # Add labels and titles
+        axs[0].set_xlabel(x_label)
+        axs[0].set_ylabel('Thrust Level [x0.1 mN]')
+        axs[0].set_title('Tangential Direction')
+
+        axs[1].set_xlabel(x_label)
+        axs[1].set_title('Cross-Track Direction')
+
+        axs[2].set_xlabel(x_label)
+        axs[2].set_title('Radial Direction')
+
+        actions_plot.suptitle('Thrust Levels over time', fontsize=16)
+        for ax_idx in range(3):
+            axs[ax_idx].grid(True)
+            axs[ax_idx].axvline(x=collision_idx, color='k', linestyle='--', label="TCA")
+            axs[ax_idx].legend(loc='upper right')
 
         actions_plot.savefig(os.path.join(plots_path_dir, f"{plot_prefix}_Actions_Plot.png"))
         plt.close(actions_plot)
 
         # compute the keplerian elements plots
-        keplerian_plot, axs = plt.subplots(5, 1)
+        keplerian_plot, axs = plt.subplots(5, 1, figsize=(25, 20))
         x_axis_data = np.arange(len(diff_sma))
+        x_label = 'Time steps [x10 min]'
 
-        axs[0].plot(x_axis_data, diff_sma)
-        axs[1].plot(x_axis_data, diff_ecc)
-        axs[2].plot(x_axis_data, diff_inc)
-        axs[3].plot(x_axis_data, diff_par)
-        axs[4].plot(x_axis_data, diff_ran)
+        # plot the data
+        axs[0].plot(x_axis_data, diff_sma, color='navy')
+        axs[1].plot(x_axis_data, diff_ecc, color='darkviolet')
+        axs[2].plot(x_axis_data, diff_inc, color='darkred')
+        axs[3].plot(x_axis_data, diff_par, color='b')
+        axs[4].plot(x_axis_data, diff_ran, color='g')
+
+        # Add labels and titles
+        label_pad = 24
+        ylabel_fontsize = 22
+        axs[0].set_ylabel('Semi-major-axis [m]', fontsize=ylabel_fontsize, labelpad=label_pad)
+        axs[1].set_ylabel('Eccentricity \n [x1e-6]', fontsize=ylabel_fontsize, labelpad=label_pad)
+        axs[2].set_ylabel('Inclination \n [x1e-5 rad]', fontsize=ylabel_fontsize, labelpad=label_pad)
+        axs[3].set_ylabel('Perigee \n Argument [1e-5 rad]', fontsize=ylabel_fontsize, labelpad=label_pad)
+        axs[4].set_ylabel('RAAN [x1e-5 rad]', fontsize=ylabel_fontsize, labelpad=label_pad)
+
+        keplerian_plot.suptitle('Keplerian Elements Differences over Time', fontsize=36)
+        for ax_idx in range(5):
+            if ax_idx == 4:
+                axs[ax_idx].set_xlabel(x_label, fontsize=22)
+            axs[ax_idx].grid(True)
+            axs[ax_idx].axvline(x=collision_idx, color='k', linestyle='--', label="TCA")
+            axs[ax_idx].tick_params(axis='both', labelsize=18)
+            if ax_idx == 0:
+                axs[ax_idx].legend(loc='upper right', fontsize=32)
 
         keplerian_plot.savefig(os.path.join(plots_path_dir, f"{plot_prefix}_Keplerian_Diff.png"))
         plt.close(keplerian_plot)
+
+        # save a json with the plotted data
+        dict_plotted_data = {
+            "historical_actions": historical_actions,
+            "sma_hist": diff_sma,
+            "ecc_hist": diff_ecc,
+            "inc_hist": diff_inc,
+            "pa_hist": diff_par,
+            "raan_hist": diff_ran,
+            "init_kepl_elements": init_kepl_elements.tolist(),
+            "collision_idx": collision_idx
+        }
+        utils.save_json(dict_=dict_plotted_data,
+                        json_path=os.path.join(plots_path_dir, f"{plot_prefix}_plotted_data.json"))
 
     @staticmethod
     def compute_dist_between_states(primary_sc_state: np.array,
@@ -300,7 +346,8 @@ class DQNEvaluator:
         diff_sma = [historical_kepl_elem[x][0] - init_kepl_elem[0] for x in range(num_comp_steps)]
         diff_ecc = [historical_kepl_elem[x][1] - init_kepl_elem[1] for x in range(num_comp_steps)]
         diff_inc = [historical_kepl_elem[x][2] - init_kepl_elem[2] for x in range(num_comp_steps)]
-        diff_par = [historical_kepl_elem[x][3] - init_kepl_elem[3] for x in range(num_comp_steps)]
+        diff_par = [min(abs(historical_kepl_elem[x][3] - init_kepl_elem[3]),
+                        abs(2*np.pi - abs((historical_kepl_elem[x][3] - init_kepl_elem[3])))) for x in range(num_comp_steps)]
         diff_ran = [historical_kepl_elem[x][4] - init_kepl_elem[4] for x in range(num_comp_steps)]
 
         return diff_sma, diff_ecc, diff_inc, diff_par, diff_ran

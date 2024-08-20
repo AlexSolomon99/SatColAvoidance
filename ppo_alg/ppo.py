@@ -292,9 +292,11 @@ def ppo(env, obs_dim, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0
     start_time = time.time()
     o, _ = env.reset()
     ep_ret, ep_len = 0, 0
+    max_avg_ep_ret = -np.inf
 
     # Main loop: collect experience in env and update/log each epoch
     for epoch in range(epochs):
+        avg_ep_ret = []
         for t in range(local_steps_per_epoch):
             a, v, logp = ac.step(torch.as_tensor(o, dtype=torch.float32))
 
@@ -325,16 +327,19 @@ def ppo(env, obs_dim, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0
                 if terminal:
                     # only save EpRet / EpLen if trajectory finished
                     logger.store(EpRet=ep_ret, EpLen=ep_len)
+                    avg_ep_ret.append(ep_ret)
                 o, _ = env.reset()
                 ep_ret, ep_len = 0, 0
 
         # Save model
-        if (epoch % save_freq == 0) or (epoch == epochs - 1):
+        avg_ep_ret = np.mean(avg_ep_ret)
+        if ((epoch % save_freq == 0) and (avg_ep_ret > max_avg_ep_ret)) or (epoch == epochs - 1):
+            max_avg_ep_ret = avg_ep_ret
             logger.save_state(pi_model=ac.pi, v_model=ac.v,
                               pi_optimizer=pi_optimizer, vf_optimizer=vf_optimizer, epoch=epoch,
                               pi_lr=pi_lr, vf_lr=vf_lr, models_kwargs=ac_kwargs, model_record_dict=model_record_dict,
                               model_record_last_idx=model_record_last_idx, record_dict_path=record_dict_path,
-                              state_dict={'env': env}, itr=None)
+                              state_dict={'env': env}, avg_ep_reward=avg_ep_ret, itr=None)
 
         # Perform PPO update!
         update()

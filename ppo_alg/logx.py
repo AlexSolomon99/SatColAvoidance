@@ -136,7 +136,7 @@ class Logger:
 
     def save_state(self, pi_model, v_model, pi_optimizer, vf_optimizer, epoch,
                    pi_lr, vf_lr, models_kwargs, state_dict, model_record_dict,
-                   model_record_last_idx, record_dict_path, itr=None):
+                   model_record_last_idx, record_dict_path, avg_ep_reward, itr=None):
         """
         Saves the state of an experiment.
 
@@ -183,7 +183,8 @@ class Logger:
                 utils.save_json(dict_=models_kwargs, json_path=os.path.join(self.output_dir, "model_kwargs_conf.json"))
 
                 model_record_dict[model_record_last_idx + 1] = {
-                    'path': self.output_dir
+                    'path': self.output_dir,
+                    'avg_reward': avg_ep_reward,
                 }
                 utils.save_json(dict_=model_record_dict, json_path=record_dict_path)
 

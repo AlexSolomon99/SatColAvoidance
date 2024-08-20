@@ -29,18 +29,19 @@ BATCH_SIZE = 128
 GAMMA = 0.99
 EPS_START = 0.9
 EPS_END = 0.05
-EPS_DECAY = 500000
+EPS_DECAY = 50000
 TAU = 0.005
 LR = 1e-4
 RESET_OPTIONS = {
     "propagator": "numerical"
 }
+LAST_EPOCH_REWARDS = 5
 
 # constant paths
 BASE = r"E:\Alex\UniBuc\MasterThesis\src"
 DATA_PATH = os.path.join(BASE, "data")
 RECORDED_MODELS_PATH = os.path.join(BASE, "recorded_models")
-DQN_METHODS_MODELS = os.path.join(RECORDED_MODELS_PATH, "dqn_models")
+DQN_METHODS_MODELS = os.path.join(RECORDED_MODELS_PATH, "dqn_models_kepl")
 
 if not os.path.isdir(RECORDED_MODELS_PATH):
     os.mkdir(RECORDED_MODELS_PATH)
@@ -60,6 +61,7 @@ else:
     model_record_last_idx = len(model_record_dict.keys())
 best_model_dir_path = os.path.join(DQN_METHODS_MODELS, f"{MODEL_NAME}_{model_record_last_idx + 1}_dir")
 best_model_path = os.path.join(best_model_dir_path, f"{MODEL_NAME}_{model_record_last_idx + 1}")
+last_model_path = os.path.join(best_model_dir_path, f"{MODEL_NAME}_{model_record_last_idx + 1}_last")
 if not os.path.isdir(best_model_dir_path):
     os.mkdir(best_model_dir_path)
 
@@ -70,14 +72,14 @@ init_sat = utils.get_sat_data_env(sat_data_config)
 env = gym.make('gym_satellite_ca:gym_satellite_ca/CollisionAvoidance-v0',
                satellite=init_sat)
 
-# set up the observation processing class
-tca_time_lapse_max_abs_val = env.observation_space['tca_time_lapse'].high[0]
-data_preprocessing = dataprocessing.data_processing.ObservationProcessing(satellite_data=env.unwrapped.satellite,
-                                                                          tca_time_lapse_max_abs_val=tca_time_lapse_max_abs_val)
+# # set up the observation processing class
+# tca_time_lapse_max_abs_val = env.observation_space['tca_time_lapse'].high[0]
+# data_preprocessing = dataprocessing.data_processing.ObservationProcessing(satellite_data=env.unwrapped.satellite,
+#                                                                           tca_time_lapse_max_abs_val=tca_time_lapse_max_abs_val)
 
 # set up neural net configuration
 nn_conf = {
-    "init_layer": 56,
+    "init_layer": 9,
     "hidden_layer_1": 128,
     "hidden_layer_2": 64,
     "output_layer": len(ACTION_SPACE) ** 3
@@ -95,17 +97,17 @@ optimizer = torch.optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
 memory = ReplayMemory(capacity=10000)
 
 # set up the utilities class
-dqn_utils_class = dqn_utils.DQNUtils(observation_processing=data_preprocessing, memory=memory, optimizer=optimizer,
+dqn_utils_class = dqn_utils.DQNUtils(observation_processing=None, memory=memory, optimizer=optimizer,
                                      device=device, batch_size=BATCH_SIZE, gamma=GAMMA,
                                      eps_start=EPS_START, eps_end=EPS_END, eps_decay=EPS_DECAY, tau=TAU,
                                      local_action_space=ACTION_SPACE)
 
 # set up training variables
 steps_done = 0
-num_episodes = 1
+num_episodes = 2000
 max_eval_reward_sum = -np.inf
 best_policy = copy.deepcopy(policy_net)
-losses_rewards_dict = {"Losses": [], "Rewards": []}
+losses_rewards_dict = {"Rewards": [], "Losses": []}
 
 print(f"{datetime.datetime.now()} - Started training")
 for i_episode in range(num_episodes):
@@ -123,8 +125,11 @@ for i_episode in range(num_episodes):
     print(f"{datetime.datetime.now()} - Epoch {i_episode} - Train Reward Sum: {rewards_sum.item()} - "
           f"Loss Mean: {losses_mean.item()}")
 
-    if rewards_sum.item() > max_eval_reward_sum:
-        max_eval_reward_sum = rewards_sum.item()
+    # get the mean of the last N rewards
+    last_n_rew_mean = np.mean(losses_rewards_dict["Rewards"][-(min(LAST_EPOCH_REWARDS, i_episode+1)):])
+
+    if last_n_rew_mean > max_eval_reward_sum:
+        max_eval_reward_sum = last_n_rew_mean
 
         # save the best model
         best_model = copy.deepcopy(policy_net)
@@ -141,4 +146,20 @@ for i_episode in range(num_episodes):
                               model_record_last_idx=model_record_last_idx,
                               max_eval_reward_sum=max_eval_reward_sum)
 
-utils.save_json(dict_=losses_rewards_dict, json_path=os.path.join(best_model_dir_path, "Losses_Reward_dict.json"))
+    if i_episode == num_episodes - 1:
+        # save the last model
+        last_model = copy.deepcopy(policy_net)
+        utils.save_best_model(best_model=last_model,
+                              best_model_path=last_model_path,
+                              best_model_dir_path=best_model_dir_path,
+                              model_conf=nn_conf,
+                              optimizer=optimizer,
+                              optimizer_lr=LR,
+                              epoch=i_episode,
+                              loss=losses_mean.item(),
+                              record_dict_path=dqn_record_dict_path,
+                              model_record_dict=model_record_dict,
+                              model_record_last_idx=model_record_last_idx,
+                              max_eval_reward_sum=max_eval_reward_sum)
+
+    utils.save_json(dict_=losses_rewards_dict, json_path=os.path.join(best_model_dir_path, "Losses_Reward_dict.json"))
