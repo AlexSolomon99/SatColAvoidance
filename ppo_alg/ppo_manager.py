@@ -11,8 +11,8 @@ import ppo_alg.core as core
 num_cpu = 1
 seed = 0
 # 5 games per epoch
-steps_per_epoch = 5 * 1151
-epochs = 5
+steps_per_epoch = 3 * 1151
+epochs = 10
 gamma = 0.99
 MODEL_NAME = "ppo_model"
 obs_dim = 9

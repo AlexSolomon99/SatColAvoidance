@@ -65,9 +65,9 @@ data_preprocessing = dataprocessing.data_processing.ObservationProcessing(satell
 
 # set up neural net configuration
 nn_conf = {
-    "init_layer": 56,
-    "hidden_layer_1": 200,
-    "hidden_layer_2": 100,
+    "init_layer": 9,
+    "hidden_layer_1": 128,
+    "hidden_layer_2": 64,
     "output_layer": 6
 }
 

@@ -12,6 +12,7 @@ import utils
 import models
 import dataprocessing
 import model_evaluation.policy_evaluator as policy_evaluator
+import model_evaluation.dqn_evaluator as dqn_evaluator
 import ppo_alg.core as core
 
 import sys
@@ -21,7 +22,7 @@ sys.path.append(r'E:\Alex\UniBuc\MasterThesis\gym-satellite-ca')
 from gym_satellite_ca.envs import satDataClass
 
 
-class PPOEvaluator(policy_evaluator.PolicyEvaluator):
+class PPOEvaluator(dqn_evaluator.DQNEvaluator):
 
     def __init__(self, device, sat_data_config, model_dir_path, model_file_path, model_evaluation_path):
 
@@ -46,9 +47,9 @@ class PPOEvaluator(policy_evaluator.PolicyEvaluator):
 
         # get observation dimension
         o, _ = self.game_env.reset()
-        flat_state = self.data_preprocessing.transform_observations(game_env_obs=o)
+        # flat_state = self.data_preprocessing.transform_observations(game_env_obs=o)
 
-        ac = core.MLPActorCritic(obs_dim=len(flat_state),
+        ac = core.MLPActorCritic(obs_dim=len(o),
                                  action_space=self.game_env.action_space,
                                  **model_conf)
 
@@ -65,7 +66,6 @@ class PPOEvaluator(policy_evaluator.PolicyEvaluator):
             "num_runs": num_runs,
             "collision_avoided": 0,
             "returned_to_init_orbit": 0,
-            "drifted_out_of_bounds": 0,
             "fuel_used_perc": 0.0,
             "raw_rewards_sum": 0.0,
             "individual_run_goals": {}
@@ -83,7 +83,6 @@ class PPOEvaluator(policy_evaluator.PolicyEvaluator):
             current_goals_status = {
                 "collision_avoided": final_info["collision_avoided"],
                 "returned_to_init_orbit": final_info["returned_to_init_orbit"],
-                "drifted_out_of_bounds": final_info["drifted_out_of_bounds"],
                 "fuel_used_perc": final_info["fuel_used_perc"],
                 "raw_rewards": sum(raw_rewards.cpu().numpy().tolist())
             }
@@ -114,11 +113,12 @@ class PPOEvaluator(policy_evaluator.PolicyEvaluator):
 
         while not done:
             # transform the observations and perform inference
-            flat_obs = self.data_preprocessing.transform_observations(game_env_obs=obs)
-            model_obs = torch.from_numpy(flat_obs).to(device=self.device, dtype=torch.float32)
+            # flat_obs = self.data_preprocessing.transform_observations(game_env_obs=obs)
+            model_obs = torch.from_numpy(obs).to(device=self.device, dtype=torch.float32)
             action = policy.act(model_obs)
 
             obs, reward, done, truncated, info = game_env.step(action.tolist())
+            done = done or truncated
             if done:
                 final_info = info
 

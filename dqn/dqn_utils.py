@@ -9,9 +9,9 @@ from dqn_replay_memory import Transition
 
 class DQNUtils:
 
-    def __init__(self, observation_processing, memory, optimizer, device, eps_start: float, eps_end: float,
+    def __init__(self, memory, optimizer, device, eps_start: float, eps_end: float,
                  eps_decay: float,
-                 tau: float, gamma: float, batch_size: int, local_action_space: list):
+                 tau: float, gamma: float, batch_size: int, local_action_space: list, observation_processing=None):
         self.observation_processing = observation_processing
         self.memory = memory
         self.optimizer = optimizer
@@ -29,14 +29,14 @@ class DQNUtils:
                        steps_done: int, reset_options: dict):
 
         # initialise the reward tensor
-        raw_rewards = torch.tensor([], device=self.device)
-        losses_tensor = torch.tensor([], device=self.device)
+        raw_rewards = torch.tensor([], device=self.device, dtype=torch.float)
+        losses_tensor = torch.tensor([], device=self.device, dtype=torch.float)
 
         # initialize the environment and get its state
         obs, _ = game_env.reset(options=reset_options)
         # transform the observations
-        flat_state = self.observation_processing.transform_observations(game_env_obs=obs)
-        state = torch.from_numpy(flat_state).to(device=self.device, dtype=torch.float)
+        # flat_state = self.observation_processing.transform_observations(game_env_obs=obs)
+        state = torch.from_numpy(obs).to(device=self.device, dtype=torch.float)
 
         for t in count():
             steps_done += 1
@@ -49,7 +49,7 @@ class DQNUtils:
 
             # apply the action and get the reward and next state
             obs, reward, done, truncated, info = game_env.step(action.tolist())
-            reward = torch.tensor([reward], device=self.device)
+            reward = torch.tensor([reward], device=self.device, dtype=torch.float)
             done = done or truncated
 
             raw_rewards = torch.cat((raw_rewards, reward))
@@ -58,8 +58,8 @@ class DQNUtils:
                 next_state = None
                 next_state_unsqueezed = None
             else:
-                next_flat_state = self.observation_processing.transform_observations(game_env_obs=obs)
-                next_state = torch.from_numpy(next_flat_state).to(device=self.device, dtype=torch.float)
+                # next_flat_state = self.observation_processing.transform_observations(game_env_obs=obs)
+                next_state = torch.from_numpy(obs).to(device=self.device, dtype=torch.float)
                 next_state_unsqueezed = next_state.unsqueeze(0)
 
             # push the transition to the memory
@@ -130,7 +130,7 @@ class DQNUtils:
         # on the "older" target_net; selecting their best reward with max(1)[0].
         # This is merged based on the mask, such that we'll have either the expected
         # state value or 0 in case the state was final.
-        next_state_values = torch.zeros(self.batch_size, device=self.device)
+        next_state_values = torch.zeros(self.batch_size, device=self.device, dtype=torch.float)
         with torch.no_grad():
             next_state_values[non_final_mask] = target_net(non_final_next_states).max(1).values
         # Compute the expected Q values

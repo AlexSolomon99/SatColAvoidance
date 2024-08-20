@@ -16,8 +16,8 @@ device = torch.device('cuda')
 # constant paths
 BASE = r"E:\Alex\UniBuc\MasterThesis\src"
 DATA_PATH = os.path.join(BASE, "data")
-MODEL_DIR_PATH = os.path.join(BASE, "recorded_models", "dqn_models", "dqn_model_10_dir")
-MODEL_FILE_PATH = os.path.join(MODEL_DIR_PATH, "dqn_model_10")
+MODEL_DIR_PATH = os.path.join(BASE, "recorded_models", "dqn_models_kepl", "dqn_model_super_nice_dir")
+MODEL_FILE_PATH = os.path.join(MODEL_DIR_PATH, "dqn_model_6")
 sat_data_config = os.path.join(DATA_PATH, "default_sat_data_config.json")
 
 print(f"{datetime.datetime.now()} - Evaluation started!")
@@ -30,6 +30,6 @@ evaluator = dqn_evaluator.DQNEvaluator(
 
 evaluator.perform_evaluation(game_env=evaluator.game_env,
                              policy=evaluator.policy,
-                             num_runs=100)
+                             num_runs=10)
 
 print(f"{datetime.datetime.now()} - Evaluation finished!")
