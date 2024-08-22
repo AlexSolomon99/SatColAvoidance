@@ -45,13 +45,20 @@ class PPOEvaluator(dqn_evaluator.DQNEvaluator):
         # loading the model intended for evaluation
         checkpoint = torch.load(model_file_path)
 
-        # get observation dimension
-        o, _ = self.game_env.reset()
-        # flat_state = self.data_preprocessing.transform_observations(game_env_obs=o)
+        # # get observation dimension
+        # o, _ = self.game_env.reset()
+        # # flat_state = self.data_preprocessing.transform_observations(game_env_obs=o)
 
-        ac = core.MLPActorCritic(obs_dim=len(o),
-                                 action_space=self.game_env.action_space,
-                                 **model_conf)
+        # Instantiate environment
+        act_dim = self.game_env.action_space.shape
+        obs_dim = self.game_env.observation_space.shape
+
+        # Create actor-critic module
+        ac = core.MLPActorCritic(obs_dim, self.game_env.action_space, **model_conf)
+
+        # ac = core.MLPActorCritic(obs_dim=len(o),
+        #                          action_space=self.game_env.action_space,
+        #                          **model_conf)
 
         ac.pi.load_state_dict(checkpoint['pi_model_state_dict'])
         ac.v.load_state_dict(checkpoint['vf_model_state_dict'])

@@ -36,7 +36,7 @@ obs, _ = env.reset(options=RESET_OPTIONS)
 
 print(f"Start game: {datetime.datetime.now()}")
 for _ in range(1):
-    rewards, observations, actions, info = utils.play_constant_game_manually(game_env=env, constant_action=[0.0, 1.0, 0.0],
+    rewards, observations, actions, info = utils.play_constant_game_manually(game_env=env, constant_action=[0.0, 0.0, 0.0],
                                                                              reset_options=RESET_OPTIONS)
     # print(f"Game finished")
     # print(f"List of rewards: {rewards}")

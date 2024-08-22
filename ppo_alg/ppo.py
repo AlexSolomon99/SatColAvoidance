@@ -206,6 +206,7 @@ def ppo(env, obs_dim, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0
 
     # Instantiate environment
     act_dim = env.action_space.shape
+    obs_dim = env.observation_space.shape
 
     # Create actor-critic module
     ac = actor_critic(obs_dim, env.action_space, **ac_kwargs)

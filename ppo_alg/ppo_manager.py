@@ -12,7 +12,7 @@ num_cpu = 1
 seed = 0
 # 5 games per epoch
 steps_per_epoch = 3 * 1151
-epochs = 10
+epochs = 20
 gamma = 0.99
 MODEL_NAME = "ppo_model"
 obs_dim = 9
@@ -21,7 +21,7 @@ obs_dim = 9
 BASE = r"E:\Alex\UniBuc\MasterThesis\src"
 DATA_PATH = os.path.join(BASE, "data")
 RECORDED_MODELS_PATH = os.path.join(BASE, "recorded_models")
-PPO_METHODS_MODELS = os.path.join(RECORDED_MODELS_PATH, "ppo_models_kepl")
+PPO_METHODS_MODELS = os.path.join(RECORDED_MODELS_PATH, "ppo_models_kepl_discrete")
 
 if not os.path.isdir(RECORDED_MODELS_PATH):
     os.mkdir(RECORDED_MODELS_PATH)
@@ -43,6 +43,7 @@ experiment_name = f"{MODEL_NAME}_{model_record_last_idx + 1}"
 # environment setup
 sat_data_config = os.path.join(DATA_PATH, "default_sat_data_config.json")
 env = utils.set_up_kepl_environment(sat_data_config=sat_data_config)
+# env = gym.make("CartPole-v1", max_episode_steps=500)
 
 # set up the ppo_alg algorithm
 mpi_fork(num_cpu)  # run parallel code with mpi
