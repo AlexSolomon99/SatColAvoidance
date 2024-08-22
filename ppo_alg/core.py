@@ -67,6 +67,9 @@ class MLPCategoricalActor(Actor):
 
     def __init__(self, obs_dim, act_dim, hidden_sizes, activation):
         super().__init__()
+        print(f"Obs dim: {obs_dim}")
+        print(f"Hidden sizzes: {hidden_sizes}")
+        print(f"act dim: {act_dim}")
         self.logits_net = mlp([obs_dim] + list(hidden_sizes) + [act_dim], activation)
 
     def _distribution(self, obs):
@@ -107,17 +110,17 @@ class MLPCritic(nn.Module):
 class MLPActorCritic(nn.Module):
 
     def __init__(self, obs_dim, action_space,
-                 hidden_sizes=(64, 64), activation=nn.Tanh):
+                 hidden_sizes=(128, 64), activation=nn.Tanh):
         super().__init__()
 
         # policy builder depends on action space
         if isinstance(action_space, Box):
-            self.pi = MLPGaussianActor(obs_dim, action_space.shape[0], hidden_sizes, activation)
+            self.pi = MLPGaussianActor(obs_dim[0], action_space.shape[0], hidden_sizes, activation)
         elif isinstance(action_space, Discrete):
-            self.pi = MLPCategoricalActor(obs_dim, action_space.n, hidden_sizes, activation)
+            self.pi = MLPCategoricalActor(obs_dim[0], action_space.n, hidden_sizes, activation)
 
         # build value function
-        self.v = MLPCritic(obs_dim, hidden_sizes, activation)
+        self.v = MLPCritic(obs_dim[0], hidden_sizes, activation)
 
     def step(self, obs):
         with torch.no_grad():

@@ -243,7 +243,7 @@ class DQNEvaluator:
         ax.set_ylabel('Absolute Distance [m]')
         ax.axvline(x=collision_idx, color='k', linestyle='--', label="TCA")
         ax.legend(loc='upper left', fontsize=20)
-        ax.set_title('Estimated Minimum Collision Distance over time', fontsize=16)
+        # ax.set_title('Estimated Minimum Collision Distance over time', fontsize=16)
         ax.grid(True)
 
         min_dist_plot.savefig(os.path.join(plots_path_dir, f"{plot_prefix}_Min_Coll_Dist.png"))
@@ -261,15 +261,15 @@ class DQNEvaluator:
         # Add labels and titles
         axs[0].set_xlabel(x_label)
         axs[0].set_ylabel('Thrust Level [x0.1 mN]')
-        axs[0].set_title('Tangential Direction')
+        axs[0].set_title('Velocity Direction')
 
         axs[1].set_xlabel(x_label)
-        axs[1].set_title('Cross-Track Direction')
+        axs[1].set_title('Normal Direction')
 
         axs[2].set_xlabel(x_label)
-        axs[2].set_title('Radial Direction')
+        axs[2].set_title('Co-normal Direction')
 
-        actions_plot.suptitle('Thrust Levels over time', fontsize=16)
+        # actions_plot.suptitle('Thrust Levels over time (VNC Frame)', fontsize=16)
         for ax_idx in range(3):
             axs[ax_idx].grid(True)
             axs[ax_idx].axvline(x=collision_idx, color='k', linestyle='--', label="TCA")
@@ -299,7 +299,7 @@ class DQNEvaluator:
         axs[3].set_ylabel('Perigee \n Argument [1e-5 rad]', fontsize=ylabel_fontsize, labelpad=label_pad)
         axs[4].set_ylabel('RAAN [x1e-5 rad]', fontsize=ylabel_fontsize, labelpad=label_pad)
 
-        keplerian_plot.suptitle('Keplerian Elements Differences over Time', fontsize=36)
+        # keplerian_plot.suptitle('Keplerian Elements Differences over Time', fontsize=36)
         for ax_idx in range(5):
             if ax_idx == 4:
                 axs[ax_idx].set_xlabel(x_label, fontsize=22)

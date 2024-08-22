@@ -30,6 +30,6 @@ evaluator = dqn_evaluator.DQNEvaluator(
 
 evaluator.perform_evaluation(game_env=evaluator.game_env,
                              policy=evaluator.policy,
-                             num_runs=10)
+                             num_runs=30)
 
 print(f"{datetime.datetime.now()} - Evaluation finished!")
