@@ -29,11 +29,14 @@ BATCH_SIZE = 128
 GAMMA = 0.99
 EPS_START = 0.9
 EPS_END = 0.05
-EPS_DECAY = 50000
+EPS_DECAY = 100000
 TAU = 0.005
 LR = 1e-4
-RESET_OPTIONS = {
-    "propagator": "numerical"
+
+# set the reset options
+reset_options = {
+    "propagator": "numerical",
+    "generate_sat": True
 }
 LAST_EPOCH_REWARDS = 5
 
@@ -108,6 +111,7 @@ num_episodes = 2000
 max_eval_reward_sum = -np.inf
 best_policy = copy.deepcopy(policy_net)
 losses_rewards_dict = {"Rewards": [], "Losses": []}
+model_saved_counter = 0
 
 print(f"{datetime.datetime.now()} - Started training")
 for i_episode in range(num_episodes):
@@ -116,7 +120,7 @@ for i_episode in range(num_episodes):
                                                                             policy_net=policy_net,
                                                                             target_net=target_net,
                                                                             steps_done=steps_done,
-                                                                            reset_options=RESET_OPTIONS)
+                                                                            reset_options=reset_options)
     rewards_sum = raw_rewards.sum()
     losses_mean = losses_tensor.mean()
 
@@ -132,9 +136,10 @@ for i_episode in range(num_episodes):
         max_eval_reward_sum = last_n_rew_mean
 
         # save the best model
+        model_saved_counter += 1
         best_model = copy.deepcopy(policy_net)
         utils.save_best_model(best_model=best_model,
-                              best_model_path=best_model_path,
+                              best_model_path=best_model_path + f"_{model_saved_counter}",
                               best_model_dir_path=best_model_dir_path,
                               model_conf=nn_conf,
                               optimizer=optimizer,

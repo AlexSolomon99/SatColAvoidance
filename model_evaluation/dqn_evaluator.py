@@ -85,12 +85,12 @@ class DQNEvaluator:
 
         return policy, optimizer, checkpoint_epoch, checkpoint_loss
 
-    def play_game_once(self, game_env, policy: torch.nn.Module):
+    def play_game_once(self, game_env, policy: torch.nn.Module, reset_options=None):
         # setting the policy to the evaluation mode
         policy.eval()
 
         # resetting the game and getting the firs obs
-        obs, _ = game_env.reset()
+        obs, _ = game_env.reset(options=reset_options)
         final_info = None
 
         # condition for the game to be over
@@ -131,7 +131,7 @@ class DQNEvaluator:
 
         return all_actions
 
-    def perform_evaluation(self, game_env, policy, num_runs=10):
+    def perform_evaluation(self, game_env, policy, num_runs=10, reset_options=None):
         # instantiate the dictionary containing the general status of the execution
         goals_overall_status_dict = {
             "num_runs": num_runs,
@@ -149,7 +149,8 @@ class DQNEvaluator:
             print(f"Step {num_idx}")
             # play the game
             raw_rewards, final_info = self.play_game_once(game_env=game_env,
-                                                          policy=policy)
+                                                          policy=policy,
+                                                          reset_options=reset_options)
 
             # store the statistics on the goals achieved by the model
             current_goals_status = {

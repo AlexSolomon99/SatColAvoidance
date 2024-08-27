@@ -16,7 +16,7 @@ device = torch.device('cpu')
 # constant paths
 BASE = r"E:\Alex\UniBuc\MasterThesis\src"
 DATA_PATH = os.path.join(BASE, "data")
-MODEL_DIR_PATH = os.path.join(BASE, "recorded_models", "ppo_models_kepl_discrete", "ppo_model_5", "ppo_model_5_s0")
+MODEL_DIR_PATH = os.path.join(BASE, "recorded_models", "ppo_models_kepl", "ppo_model_16", "ppo_model_16_s0")
 MODEL_FILE_PATH = os.path.join(MODEL_DIR_PATH, "ppo_model")
 sat_data_config = os.path.join(DATA_PATH, "default_sat_data_config.json")
 
@@ -30,6 +30,6 @@ evaluator = ppo_evaluator.PPOEvaluator(
 
 evaluator.perform_evaluation(game_env=evaluator.game_env,
                              policy=evaluator.policy,
-                             num_runs=2)
+                             num_runs=30)
 
 print(f"{datetime.datetime.now()} - Evaluation finished!")

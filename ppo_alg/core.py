@@ -15,7 +15,7 @@ def combined_shape(length, shape=None):
 
 
 def mlp(sizes, activation, output_activation=nn.Identity):
-    layers = [nn.LayerNorm(sizes[0])]
+    layers = []
     for j in range(len(sizes) - 1):
         act = activation if j < len(sizes) - 2 else output_activation
         layers += [nn.Linear(sizes[j], sizes[j + 1]), act()]
@@ -67,9 +67,6 @@ class MLPCategoricalActor(Actor):
 
     def __init__(self, obs_dim, act_dim, hidden_sizes, activation):
         super().__init__()
-        print(f"Obs dim: {obs_dim}")
-        print(f"Hidden sizzes: {hidden_sizes}")
-        print(f"act dim: {act_dim}")
         self.logits_net = mlp([obs_dim] + list(hidden_sizes) + [act_dim], activation)
 
     def _distribution(self, obs):

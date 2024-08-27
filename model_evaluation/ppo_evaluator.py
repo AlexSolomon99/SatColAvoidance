@@ -67,7 +67,7 @@ class PPOEvaluator(dqn_evaluator.DQNEvaluator):
 
         return ac, None, checkpoint_epoch, None
 
-    def perform_evaluation(self, game_env, policy, num_runs=10):
+    def perform_evaluation(self, game_env, policy, num_runs=10, reset_options=None):
         # instantiate the dictionary containing the general status of the execution
         goals_overall_status_dict = {
             "num_runs": num_runs,
