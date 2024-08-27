@@ -28,7 +28,7 @@ MODEL_NAME = "policy_model"
 BASE = r"E:\Alex\UniBuc\MasterThesis\src"
 DATA_PATH = os.path.join(BASE, "data")
 RECORDED_MODELS_PATH = os.path.join(BASE, "recorded_models")
-POLICY_METHODS_MODELS = os.path.join(RECORDED_MODELS_PATH, "policy_methods_models")
+POLICY_METHODS_MODELS = os.path.join(RECORDED_MODELS_PATH, "policy_methods_models_kepl")
 
 if not os.path.isdir(RECORDED_MODELS_PATH):
     os.mkdir(RECORDED_MODELS_PATH)
@@ -59,7 +59,8 @@ env = gym.make('gym_satellite_ca:gym_satellite_ca/CollisionAvoidance-v0',
                satellite=init_sat)
 
 # set up the observation processing class
-tca_time_lapse_max_abs_val = env.observation_space['tca_time_lapse'].high[0]
+# tca_time_lapse_max_abs_val = env.observation_space['tca_time_lapse'].high[0]
+tca_time_lapse_max_abs_val = 100.0
 data_preprocessing = dataprocessing.data_processing.ObservationProcessing(satellite_data=env.unwrapped.satellite,
                                                                           tca_time_lapse_max_abs_val=tca_time_lapse_max_abs_val)
 
@@ -77,13 +78,14 @@ policy_utils = PolicyMethodsUtils(observation_processing=data_preprocessing, dev
 optimizer, optimizer_lr = policy_utils.instantiate_loss_fnc_optimiser(policy=nn_policy)
 
 # set up training variables
-train_eval_steps = 1000
+train_eval_steps = 100
 
 train_total_losses = torch.tensor([], device=device)
 train_rewards_sum_list = torch.tensor([], device=device)
 eval_rewards_sum_list = torch.tensor([], device=device)
 max_eval_reward_sum = -np.inf
 best_model = copy.deepcopy(nn_policy)
+losses_rewards_dict = {"train_rewards": [], "eval_rewards": []}
 
 print(f"{datetime.datetime.now()} - Started training")
 for steps in range(train_eval_steps):
@@ -95,8 +97,12 @@ for steps in range(train_eval_steps):
     eval_arr_raw_rewards = policy_utils.eval_policy(policy=nn_policy, game_env=env,
                                                     optimizer=optimizer, num_eval_iterations=1)
 
-    train_rewards_sum = torch.sum(train_arr_raw_rewards.mean(axis=1))
+    train_rewards_sum = torch.sum(train_arr_raw_rewards.mean(axis=1)) / 5
     eval_rewards_sum = torch.sum(eval_arr_raw_rewards.mean(axis=1))
+
+    losses_rewards_dict["train_rewards"].append(train_rewards_sum.item())
+    losses_rewards_dict["eval_rewards"].append(eval_rewards_sum.item())
+    utils.save_json(dict_=losses_rewards_dict, json_path=os.path.join(best_model_dir_path, "Train_Reward_dict.json"))
 
     if eval_rewards_sum > max_eval_reward_sum:
         max_eval_reward_sum = eval_rewards_sum

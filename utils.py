@@ -132,13 +132,6 @@ def play_constant_game_manually(game_env, constant_action, reset_options=None):
     observations = []
     actions = []
 
-    to_do_actions = [
-        [0.0, 0.0, 0.0],
-        [1.0, 1.0, 1.0],
-        [0.0, 0.0, 0.0],
-        [1.0, 1.0, 1.0],
-    ]
-
     curr_idx = 0
 
     while not done:
@@ -146,11 +139,10 @@ def play_constant_game_manually(game_env, constant_action, reset_options=None):
         if curr_idx % 100 == 0:
             print(f"{datetime.datetime.now()} - Current step idx: ", game_env.unwrapped.time_step_idx)
 
-        # action = constant_action
-        action = to_do_actions[curr_idx - 1]
+        action = constant_action
         obs, reward, done, truncated, info = game_env.step(action)
-        if curr_idx == 4:
-            sys.exit()
+        # if curr_idx == 4:
+        #     sys.exit()
         # print(f"Current observation: {obs}")
         # print()
 
@@ -159,10 +151,6 @@ def play_constant_game_manually(game_env, constant_action, reset_options=None):
         rewards.append(reward)
         actions.append(action)
         observations.append(obs)
-
-    orbital_elem_hist = info["historical_primary_sequence"]
-    for elem in orbital_elem_hist:
-        print(elem[2])
 
     return rewards, observations, actions, info
 

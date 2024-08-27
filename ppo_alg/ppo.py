@@ -231,6 +231,10 @@ def ppo(env, obs_dim, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0
         ratio = torch.exp(logp - logp_old)
         clip_adv = torch.clamp(ratio, 1 - clip_ratio, 1 + clip_ratio) * adv
         loss_pi = -(torch.min(ratio * adv, clip_adv)).mean()
+        # print(f"Ratio: {ratio}")
+        # print(f"Clip adv: {clip_adv}")
+        # print(f"Advantage function value: {adv}")
+        # print(f"Loss Pi: {loss_pi}")
 
         # Useful extra info
         approx_kl = (logp_old - logp).mean().item()
@@ -255,7 +259,6 @@ def ppo(env, obs_dim, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0
 
     def update():
         data = buf.get()
-
         pi_l_old, pi_info_old = compute_loss_pi(data)
         pi_l_old = pi_l_old.item()
         v_l_old = compute_loss_v(data).item()

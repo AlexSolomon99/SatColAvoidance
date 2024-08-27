@@ -31,8 +31,8 @@ class PolicyMethodsUtils:
 
         while not done:
             # transform the observations and perform inference
-            flat_obs = self.observation_processing.transform_observations(game_env_obs=obs)
-            model_obs = torch.from_numpy(flat_obs).to(device=self.device, dtype=torch.float)
+            # flat_obs = self.observation_processing.transform_observations(game_env_obs=obs)
+            model_obs = torch.from_numpy(obs).to(device=self.device, dtype=torch.float)
             action_parameters = policy(model_obs)
 
             # get the mean and std from the action parameters
@@ -55,7 +55,7 @@ class PolicyMethodsUtils:
         scores_per_action = self.compute_discount_rate_reward(list_of_rewards=raw_rewards)
 
         if train:
-            loss = self.update_policy(scores_per_action, log_probs, optimizer)
+            loss = self.update_policy(policy, scores_per_action, log_probs, optimizer)
         else:
             loss = 0
 
@@ -125,7 +125,7 @@ class PolicyMethodsUtils:
         return score
 
     @staticmethod
-    def update_policy(returns, log_prob_actions, optimizer):
+    def update_policy(policy, returns, log_prob_actions, optimizer):
         returns = returns.detach()
 
         loss = - torch.mean(torch.sum(log_prob_actions * returns.unsqueeze(1), dim=1))
@@ -133,6 +133,7 @@ class PolicyMethodsUtils:
         optimizer.zero_grad()
 
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(policy.parameters(), max_norm=5.0)
 
         optimizer.step()
 

@@ -15,7 +15,8 @@ sys.path.append(r'E:\Alex\UniBuc\MasterThesis\gym-satellite-ca')
 BASE = "./"
 DATA_PATH = os.path.join(BASE, "data")
 RESET_OPTIONS = {
-    "propagator": "numerical"
+    "propagator": "numerical",
+    "generate_sat": False
 }
 
 # paths
