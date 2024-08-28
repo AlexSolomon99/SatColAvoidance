@@ -17,17 +17,14 @@ device = torch.device('cuda')
 BASE = r"E:\Alex\UniBuc\MasterThesis\src"
 DATA_PATH = os.path.join(BASE, "data")
 for idx in range(1):
-    MODEL_DIR_PATH = os.path.join(BASE, "recorded_models", "dqn_models_kepl", "dqn_model_super_nice_dir")
-    MODEL_FILE_PATH = os.path.join(MODEL_DIR_PATH, f"dqn_model_6")
-    # MODEL_EVALUATION_PATH = os.path.join(MODEL_DIR_PATH, f"dqn_model_10_{idx+1}_dir")
-    # if not os.path.isdir(MODEL_EVALUATION_PATH):
-    #     os.mkdir(MODEL_EVALUATION_PATH)
+    MODEL_DIR_PATH = os.path.join(BASE, "recorded_models", "dqn_models", "dqn_model_4_dir")
+    MODEL_FILE_PATH = os.path.join(MODEL_DIR_PATH, f"dqn_model_4")
     sat_data_config = os.path.join(DATA_PATH, "default_sat_data_config.json")
 
     # set the reset options
     reset_options = {
         "propagator": "numerical",
-        "generate_sat": True
+        "generate_sat": False
     }
 
     print(f"{datetime.datetime.now()} - Evaluation started!")

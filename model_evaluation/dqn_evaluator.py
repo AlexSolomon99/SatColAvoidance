@@ -50,12 +50,12 @@ class DQNEvaluator:
                        satellite=init_sat)
 
         # set up the observation processing class
-        # tca_time_lapse_max_abs_val = env.observation_space['tca_time_lapse'].high[0]
-        # data_preprocessing = dataprocessing.data_processing.ObservationProcessing(
-        #     satellite_data=env.unwrapped.satellite,
-        #     tca_time_lapse_max_abs_val=tca_time_lapse_max_abs_val)
+        tca_time_lapse_max_abs_val = env.observation_space['tca_time_lapse'].high[0]
+        data_preprocessing = dataprocessing.data_processing.ObservationProcessing(
+            satellite_data=env.unwrapped.satellite,
+            tca_time_lapse_max_abs_val=tca_time_lapse_max_abs_val)
 
-        return env, None
+        return env, data_preprocessing
 
     @staticmethod
     def instantiate_model(device, model_dir_path, model_file_path, model_evaluation_path):
@@ -101,8 +101,8 @@ class DQNEvaluator:
 
         while not done:
             # transform the observations and perform inference
-            # flat_obs = self.data_preprocessing.transform_observations(game_env_obs=obs)
-            model_obs = torch.from_numpy(obs).to(device=self.device, dtype=torch.float)
+            flat_obs = self.data_preprocessing.transform_observations(game_env_obs=obs)
+            model_obs = torch.from_numpy(flat_obs).to(device=self.device, dtype=torch.float)
 
             # select an action
             action, action_idx = (self.full_action_space[policy(model_obs).argmax()],
@@ -207,13 +207,8 @@ class DQNEvaluator:
         init_kepl_elements = game_final_info["init_kepl_elements"]
 
         historical_actions = game_final_info["historical_actions"]
-        hist_primary_at_collision_states = game_final_info["hist_primary_at_collision_states"]
-        hist_kepl_elements = game_final_info["historical_primary_sequence"]
+        hist_kepl_elements = game_final_info["hist_kepl_elements"]
 
-        collision_distance = game_final_info["collision_distance"]
-        initial_orbit_radius_bound = game_final_info["initial_orbit_radius_bound"]
-        max_altitude_diff_allowed = game_final_info["max_altitude_diff_allowed"]
-        min_collision_distances = game_final_info["min_collision_distances"]
         collision_idx = game_final_info["collision_idx"]
 
         # get the difference between the historical keplerian elements and the initial values
@@ -232,24 +227,6 @@ class DQNEvaluator:
         actions_y = [x[1] for x in historical_actions]
         actions_z = [x[2] for x in historical_actions]
 
-        # compute the min distances plots
-        min_dist_plot, ax = plt.subplots(1, 1, figsize=(15, 5))
-        x_axis_data = np.arange(len(min_collision_distances[:collision_idx]))
-        x_label = 'Time steps [x10 min]'
-
-        ax.plot(x_axis_data, min_collision_distances[:collision_idx], color='navy')
-
-        # Add labels and titles
-        ax.set_xlabel(x_label)
-        ax.set_ylabel('Absolute Distance [m]')
-        ax.axvline(x=collision_idx, color='k', linestyle='--', label="TCA")
-        ax.legend(loc='upper left', fontsize=20)
-        # ax.set_title('Estimated Minimum Collision Distance over time', fontsize=16)
-        ax.grid(True)
-
-        min_dist_plot.savefig(os.path.join(plots_path_dir, f"{plot_prefix}_Min_Coll_Dist.png"))
-        plt.close(min_dist_plot)
-
         # compute the actions plots
         actions_plot, axs = plt.subplots(1, 3, figsize=(15, 5))
         x_axis_data = np.arange(len(action_means))
@@ -261,14 +238,14 @@ class DQNEvaluator:
 
         # Add labels and titles
         axs[0].set_xlabel(x_label)
-        axs[0].set_ylabel('Thrust Level [x0.1 mN]')
-        axs[0].set_title('Velocity Direction')
+        axs[0].set_ylabel('Thrust Level [x1 mN]')
+        axs[0].set_title('Ox Direction')
 
         axs[1].set_xlabel(x_label)
-        axs[1].set_title('Normal Direction')
+        axs[1].set_title('Oy Direction')
 
         axs[2].set_xlabel(x_label)
-        axs[2].set_title('Co-normal Direction')
+        axs[2].set_title('Oz Direction')
 
         # actions_plot.suptitle('Thrust Levels over time (VNC Frame)', fontsize=16)
         for ax_idx in range(3):
@@ -321,7 +298,7 @@ class DQNEvaluator:
             "inc_hist": diff_inc,
             "pa_hist": diff_par,
             "raan_hist": diff_ran,
-            "init_kepl_elements": init_kepl_elements.tolist(),
+            "init_kepl_elements": init_kepl_elements,
             "collision_idx": collision_idx
         }
         utils.save_json(dict_=dict_plotted_data,

@@ -31,8 +31,8 @@ class PolicyMethodsUtils:
 
         while not done:
             # transform the observations and perform inference
-            # flat_obs = self.observation_processing.transform_observations(game_env_obs=obs)
-            model_obs = torch.from_numpy(obs).to(device=self.device, dtype=torch.float)
+            flat_obs = self.observation_processing.transform_observations(game_env_obs=obs)
+            model_obs = torch.from_numpy(flat_obs).to(device=self.device, dtype=torch.float)
             action_parameters = policy(model_obs)
 
             # get the mean and std from the action parameters

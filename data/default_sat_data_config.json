@@ -1,1 +1,1 @@
-{"sma": 6795000.0, "ecc": 0.18, "inc": 21.6413, "argp": 21.0174, "raan": 60, "tran": 0.0, "mass": 100.0, "area": 1.0, "reflection_idx": 2.0, "angle_type": "DEGREE", "thruster_max_force": 0.0001, "thruster_isp": 4000.0}
+{"sma": 6795000.0, "ecc": 0.18, "inc": 21.6413, "argp": 21.0174, "raan": 60, "tran": 0.0, "mass": 100.0, "area": 1.0, "reflection_idx": 2.0, "angle_type": "DEGREE", "thruster_max_force": 0.001, "thruster_isp": 4000.0}

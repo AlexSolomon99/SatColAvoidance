@@ -36,7 +36,7 @@ LR = 1e-4
 # set the reset options
 reset_options = {
     "propagator": "numerical",
-    "generate_sat": True
+    "generate_sat": False
 }
 LAST_EPOCH_REWARDS = 5
 
@@ -75,16 +75,16 @@ init_sat = utils.get_sat_data_env(sat_data_config)
 env = gym.make('gym_satellite_ca:gym_satellite_ca/CollisionAvoidance-v0',
                satellite=init_sat)
 
-# # set up the observation processing class
-# tca_time_lapse_max_abs_val = env.observation_space['tca_time_lapse'].high[0]
-# data_preprocessing = dataprocessing.data_processing.ObservationProcessing(satellite_data=env.unwrapped.satellite,
-#                                                                           tca_time_lapse_max_abs_val=tca_time_lapse_max_abs_val)
+# set up the observation processing class
+tca_time_lapse_max_abs_val = env.observation_space['tca_time_lapse'].high[0]
+data_preprocessing = dataprocessing.data_processing.ObservationProcessing(satellite_data=env.unwrapped.satellite,
+                                                                          tca_time_lapse_max_abs_val=tca_time_lapse_max_abs_val)
 
 # set up neural net configuration
 nn_conf = {
-    "init_layer": 9,
-    "hidden_layer_1": 128,
-    "hidden_layer_2": 64,
+    "init_layer": 56,
+    "hidden_layer_1": 500,
+    "hidden_layer_2": 200,
     "output_layer": len(ACTION_SPACE) ** 3
 }
 

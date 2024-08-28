@@ -70,8 +70,8 @@ class PolicyEvaluator(dqn_evaluator.DQNEvaluator):
 
         while not done:
             # transform the observations and perform inference
-            # flat_obs = self.data_preprocessing.transform_observations(game_env_obs=obs)
-            model_obs = torch.from_numpy(obs).to(device=self.device, dtype=torch.float)
+            flat_obs = self.data_preprocessing.transform_observations(game_env_obs=obs)
+            model_obs = torch.from_numpy(flat_obs).to(device=self.device, dtype=torch.float)
             action_parameters = policy(model_obs)
 
             # get the mean and std from the action parameters
@@ -107,7 +107,8 @@ class PolicyEvaluator(dqn_evaluator.DQNEvaluator):
         for num_idx in range(num_runs):
             # play the game
             raw_rewards, final_info = self.play_game_once(game_env=game_env,
-                                                          policy=policy)
+                                                          policy=policy,
+                                                          reset_options=reset_options)
 
             # store the statistics on the goals achieved by the model
             current_goals_status = {

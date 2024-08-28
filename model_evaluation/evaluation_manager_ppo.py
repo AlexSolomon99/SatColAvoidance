@@ -16,7 +16,7 @@ device = torch.device('cpu')
 # constant paths
 BASE = r"E:\Alex\UniBuc\MasterThesis\src"
 DATA_PATH = os.path.join(BASE, "data")
-MODEL_DIR_PATH = os.path.join(BASE, "recorded_models", "ppo_models_kepl", "ppo_model_16", "ppo_model_16_s0")
+MODEL_DIR_PATH = os.path.join(BASE, "recorded_models", "ppo_models", "ppo_model_7", "ppo_model_7_s0")
 MODEL_FILE_PATH = os.path.join(MODEL_DIR_PATH, "ppo_model")
 sat_data_config = os.path.join(DATA_PATH, "default_sat_data_config.json")
 

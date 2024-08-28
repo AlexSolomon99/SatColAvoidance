@@ -28,7 +28,7 @@ MODEL_NAME = "policy_model"
 BASE = r"E:\Alex\UniBuc\MasterThesis\src"
 DATA_PATH = os.path.join(BASE, "data")
 RECORDED_MODELS_PATH = os.path.join(BASE, "recorded_models")
-POLICY_METHODS_MODELS = os.path.join(RECORDED_MODELS_PATH, "policy_methods_models_kepl")
+POLICY_METHODS_MODELS = os.path.join(RECORDED_MODELS_PATH, "policy_methods_models")
 
 if not os.path.isdir(RECORDED_MODELS_PATH):
     os.mkdir(RECORDED_MODELS_PATH)
@@ -59,14 +59,13 @@ env = gym.make('gym_satellite_ca:gym_satellite_ca/CollisionAvoidance-v0',
                satellite=init_sat)
 
 # set up the observation processing class
-# tca_time_lapse_max_abs_val = env.observation_space['tca_time_lapse'].high[0]
-tca_time_lapse_max_abs_val = 100.0
+tca_time_lapse_max_abs_val = env.observation_space['tca_time_lapse'].high[0]
 data_preprocessing = dataprocessing.data_processing.ObservationProcessing(satellite_data=env.unwrapped.satellite,
                                                                           tca_time_lapse_max_abs_val=tca_time_lapse_max_abs_val)
 
 # set up neural net configuration
 nn_conf = {
-    "init_layer": 9,
+    "init_layer": 56,
     "hidden_layer_1": 128,
     "hidden_layer_2": 64,
     "output_layer": 6
@@ -78,7 +77,7 @@ policy_utils = PolicyMethodsUtils(observation_processing=data_preprocessing, dev
 optimizer, optimizer_lr = policy_utils.instantiate_loss_fnc_optimiser(policy=nn_policy)
 
 # set up training variables
-train_eval_steps = 100
+train_eval_steps = 200
 
 train_total_losses = torch.tensor([], device=device)
 train_rewards_sum_list = torch.tensor([], device=device)

@@ -15,7 +15,7 @@ steps_per_epoch = 5 * 1151
 epochs = 100
 gamma = 0.99
 MODEL_NAME = "ppo_model"
-obs_dim = 9
+obs_dim = 56
 PI_LR = 3e-4
 LR_VF = 1e-3
 
