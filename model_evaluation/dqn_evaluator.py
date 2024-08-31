@@ -237,15 +237,16 @@ class DQNEvaluator:
         axs[2].plot(x_axis_data, actions_z, color='b')
 
         # Add labels and titles
-        axs[0].set_xlabel(x_label)
-        axs[0].set_ylabel('Thrust Level [x1 mN]')
-        axs[0].set_title('Ox Direction')
+        ylabel_fontsize = 18
+        xlabel_fontsize = 18
 
-        axs[1].set_xlabel(x_label)
-        axs[1].set_title('Oy Direction')
+        axs[0].set_ylabel('Thrust Level [x1 mN]', fontsize=ylabel_fontsize)
+        axs[0].set_title('Ox Direction', fontsize=xlabel_fontsize)
 
-        axs[2].set_xlabel(x_label)
-        axs[2].set_title('Oz Direction')
+        axs[1].set_title('Oy Direction', fontsize=xlabel_fontsize)
+        axs[1].set_xlabel(x_label, fontsize=xlabel_fontsize)
+
+        axs[2].set_title('Oz Direction', fontsize=xlabel_fontsize)
 
         # actions_plot.suptitle('Thrust Levels over time (VNC Frame)', fontsize=16)
         for ax_idx in range(3):
@@ -270,20 +271,20 @@ class DQNEvaluator:
 
         # Add labels and titles
         label_pad = 24
-        ylabel_fontsize = 22
+        ylabel_fontsize = 26
         axs[0].set_ylabel('Semi-major-axis [m]', fontsize=ylabel_fontsize, labelpad=label_pad)
         axs[1].set_ylabel('Eccentricity \n [x1e-6]', fontsize=ylabel_fontsize, labelpad=label_pad)
         axs[2].set_ylabel('Inclination \n [x1e-5 rad]', fontsize=ylabel_fontsize, labelpad=label_pad)
-        axs[3].set_ylabel('Perigee \n Argument [1e-5 rad]', fontsize=ylabel_fontsize, labelpad=label_pad)
+        axs[3].set_ylabel('Perigee \n Argument \n [1e-5 rad]', fontsize=ylabel_fontsize, labelpad=label_pad)
         axs[4].set_ylabel('RAAN [x1e-5 rad]', fontsize=ylabel_fontsize, labelpad=label_pad)
 
         # keplerian_plot.suptitle('Keplerian Elements Differences over Time', fontsize=36)
         for ax_idx in range(5):
             if ax_idx == 4:
-                axs[ax_idx].set_xlabel(x_label, fontsize=22)
+                axs[ax_idx].set_xlabel(x_label, fontsize=32, labelpad=label_pad)
             axs[ax_idx].grid(True)
             axs[ax_idx].axvline(x=collision_idx, color='k', linestyle='--', label="TCA")
-            axs[ax_idx].tick_params(axis='both', labelsize=18)
+            axs[ax_idx].tick_params(axis='both', labelsize=22)
             if ax_idx == 0:
                 axs[ax_idx].legend(loc='upper right', fontsize=32)
 
