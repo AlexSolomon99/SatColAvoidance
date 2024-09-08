@@ -216,6 +216,11 @@ class DQNEvaluator:
         min_collision_distances = game_final_info["min_collision_distances"]
         collision_idx = game_final_info["collision_idx"]
 
+        # reward contributions
+        reward_contrib_ca = game_final_info["reward_contrib_ca"]
+        reward_contrib_ret = game_final_info["reward_contrib_ret"]
+        reward_contrib_fuel = game_final_info["reward_contrib_fuel"]
+
         # get the difference between the historical keplerian elements and the initial values
         diff_sma, diff_ecc, diff_inc, diff_par, diff_ran = self.get_diff_between_hist_kepl_elem_and_initial_ones(
             historical_kepl_elem=hist_kepl_elements, init_kepl_elem=init_kepl_elements
@@ -232,6 +237,30 @@ class DQNEvaluator:
         actions_y = [x[1] for x in historical_actions]
         actions_z = [x[2] for x in historical_actions]
 
+        # compute the reward contributions
+        reward_contrib_plot, ax = plt.subplots(1, 1, figsize=(15, 5))
+        x_axis_data = np.arange(len(reward_contrib_ca))
+        x_label = 'Time steps [x10 min]'
+
+        ax.scatter(x_axis_data, reward_contrib_ca, color='r', label="CA")
+        ax.scatter(x_axis_data, reward_contrib_ret, color='navy', label="RET")
+        ax.scatter(x_axis_data, reward_contrib_fuel, color='g', label="FUEL")
+
+        # Add labels and titles
+        ylabel_fontsize = 18
+        xlabel_fontsize = 18
+
+        # Add labels and titles
+        ax.set_xlabel(x_label, fontsize=xlabel_fontsize)
+        ax.set_ylabel('Reward Contributions', fontsize=ylabel_fontsize)
+        ax.axvline(x=collision_idx, color='k', linestyle='--', label="TCA")
+        ax.legend(loc='lower right', fontsize=18)
+        # ax.set_title('Estimated Minimum Collision Distance over time', fontsize=16)
+        ax.grid(True)
+
+        reward_contrib_plot.savefig(os.path.join(plots_path_dir, f"{plot_prefix}_Reward_Contrib.png"))
+        plt.close(reward_contrib_plot)
+
         # compute the min distances plots
         min_dist_plot, ax = plt.subplots(1, 1, figsize=(15, 5))
         x_axis_data = np.arange(len(min_collision_distances[:collision_idx]))
@@ -240,8 +269,12 @@ class DQNEvaluator:
         ax.plot(x_axis_data, min_collision_distances[:collision_idx], color='navy')
 
         # Add labels and titles
-        ax.set_xlabel(x_label)
-        ax.set_ylabel('Absolute Distance [m]')
+        ylabel_fontsize = 18
+        xlabel_fontsize = 18
+
+        # Add labels and titles
+        ax.set_xlabel(x_label, fontsize=xlabel_fontsize)
+        ax.set_ylabel('Absolute Distance [m]', fontsize=ylabel_fontsize)
         ax.axvline(x=collision_idx, color='k', linestyle='--', label="TCA")
         ax.legend(loc='upper left', fontsize=20)
         # ax.set_title('Estimated Minimum Collision Distance over time', fontsize=16)
@@ -260,15 +293,16 @@ class DQNEvaluator:
         axs[2].plot(x_axis_data, actions_z, color='b')
 
         # Add labels and titles
-        axs[0].set_xlabel(x_label)
-        axs[0].set_ylabel('Thrust Level [x0.1 mN]')
-        axs[0].set_title('Velocity Direction')
+        ylabel_fontsize = 18
+        xlabel_fontsize = 18
 
-        axs[1].set_xlabel(x_label)
-        axs[1].set_title('Normal Direction')
+        axs[0].set_ylabel('Thrust Level [x0.1 mN]', fontsize=ylabel_fontsize)
+        axs[0].set_title('Velocity Direction', fontsize=xlabel_fontsize)
 
-        axs[2].set_xlabel(x_label)
-        axs[2].set_title('Co-normal Direction')
+        axs[1].set_title('Normal Direction', fontsize=xlabel_fontsize)
+        axs[1].set_xlabel(x_label, fontsize=xlabel_fontsize)
+
+        axs[2].set_title('Co-Normal Direction', fontsize=xlabel_fontsize)
 
         # actions_plot.suptitle('Thrust Levels over time (VNC Frame)', fontsize=16)
         for ax_idx in range(3):
@@ -293,20 +327,20 @@ class DQNEvaluator:
 
         # Add labels and titles
         label_pad = 24
-        ylabel_fontsize = 22
+        ylabel_fontsize = 26
         axs[0].set_ylabel('Semi-major-axis [m]', fontsize=ylabel_fontsize, labelpad=label_pad)
         axs[1].set_ylabel('Eccentricity \n [x1e-6]', fontsize=ylabel_fontsize, labelpad=label_pad)
         axs[2].set_ylabel('Inclination \n [x1e-5 rad]', fontsize=ylabel_fontsize, labelpad=label_pad)
-        axs[3].set_ylabel('Perigee \n Argument [1e-5 rad]', fontsize=ylabel_fontsize, labelpad=label_pad)
+        axs[3].set_ylabel('Perigee \n Argument \n [1e-5 rad]', fontsize=ylabel_fontsize, labelpad=label_pad)
         axs[4].set_ylabel('RAAN [x1e-5 rad]', fontsize=ylabel_fontsize, labelpad=label_pad)
 
         # keplerian_plot.suptitle('Keplerian Elements Differences over Time', fontsize=36)
         for ax_idx in range(5):
             if ax_idx == 4:
-                axs[ax_idx].set_xlabel(x_label, fontsize=22)
+                axs[ax_idx].set_xlabel(x_label, fontsize=32, labelpad=label_pad)
             axs[ax_idx].grid(True)
             axs[ax_idx].axvline(x=collision_idx, color='k', linestyle='--', label="TCA")
-            axs[ax_idx].tick_params(axis='both', labelsize=18)
+            axs[ax_idx].tick_params(axis='both', labelsize=22)
             if ax_idx == 0:
                 axs[ax_idx].legend(loc='upper right', fontsize=32)
 
@@ -322,7 +356,8 @@ class DQNEvaluator:
             "pa_hist": diff_par,
             "raan_hist": diff_ran,
             "init_kepl_elements": init_kepl_elements.tolist(),
-            "collision_idx": collision_idx
+            "collision_idx": collision_idx,
+            "min_coll_dist": min_collision_distances[:collision_idx]
         }
         utils.save_json(dict_=dict_plotted_data,
                         json_path=os.path.join(plots_path_dir, f"{plot_prefix}_plotted_data.json"))

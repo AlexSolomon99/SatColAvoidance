@@ -17,8 +17,8 @@ device = torch.device('cuda')
 BASE = r"E:\Alex\UniBuc\MasterThesis\src"
 DATA_PATH = os.path.join(BASE, "data")
 for idx in range(1):
-    MODEL_DIR_PATH = os.path.join(BASE, "recorded_models", "dqn_models_kepl", "dqn_model_super_nice_dir")
-    MODEL_FILE_PATH = os.path.join(MODEL_DIR_PATH, f"dqn_model_6")
+    MODEL_DIR_PATH = os.path.join(BASE, "recorded_models", "dqn_models_kepl", "dqn_model_14_dir")
+    MODEL_FILE_PATH = os.path.join(MODEL_DIR_PATH, f"dqn_model_14_4")
     # MODEL_EVALUATION_PATH = os.path.join(MODEL_DIR_PATH, f"dqn_model_10_{idx+1}_dir")
     # if not os.path.isdir(MODEL_EVALUATION_PATH):
     #     os.mkdir(MODEL_EVALUATION_PATH)
@@ -27,7 +27,7 @@ for idx in range(1):
     # set the reset options
     reset_options = {
         "propagator": "numerical",
-        "generate_sat": True
+        "generate_sat": False
     }
 
     print(f"{datetime.datetime.now()} - Evaluation started!")
@@ -40,7 +40,7 @@ for idx in range(1):
 
     evaluator.perform_evaluation(game_env=evaluator.game_env,
                                  policy=evaluator.policy,
-                                 num_runs=30,
+                                 num_runs=2,
                                  reset_options=reset_options)
 
     print(f"{datetime.datetime.now()} - Evaluation finished!")
