@@ -12,7 +12,7 @@ seed = 0
 # 5 games per epoch
 steps_per_epoch = 5 * 1151
 # steps_per_epoch = 5000
-epochs = 100
+epochs = 2000
 gamma = 0.99
 MODEL_NAME = "ppo_model"
 obs_dim = 9

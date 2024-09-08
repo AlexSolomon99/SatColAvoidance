@@ -30,6 +30,6 @@ evaluator = policy_evaluator.PolicyEvaluator(
 
 evaluator.perform_evaluation(game_env=evaluator.game_env,
                              policy=evaluator.policy,
-                             num_runs=30)
+                             num_runs=1)
 
 print(f"{datetime.datetime.now()} - Evaluation finished!")

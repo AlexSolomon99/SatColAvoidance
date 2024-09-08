@@ -151,20 +151,19 @@ for i_episode in range(num_episodes):
                               model_record_last_idx=model_record_last_idx,
                               max_eval_reward_sum=max_eval_reward_sum)
 
-    if i_episode == num_episodes - 1:
-        # save the last model
-        last_model = copy.deepcopy(policy_net)
-        utils.save_best_model(best_model=last_model,
-                              best_model_path=last_model_path,
-                              best_model_dir_path=best_model_dir_path,
-                              model_conf=nn_conf,
-                              optimizer=optimizer,
-                              optimizer_lr=LR,
-                              epoch=i_episode,
-                              loss=losses_mean.item(),
-                              record_dict_path=dqn_record_dict_path,
-                              model_record_dict=model_record_dict,
-                              model_record_last_idx=model_record_last_idx,
-                              max_eval_reward_sum=max_eval_reward_sum)
+    # save the last model
+    last_model = copy.deepcopy(policy_net)
+    utils.save_best_model(best_model=last_model,
+                          best_model_path=last_model_path,
+                          best_model_dir_path=best_model_dir_path,
+                          model_conf=nn_conf,
+                          optimizer=optimizer,
+                          optimizer_lr=LR,
+                          epoch=i_episode,
+                          loss=losses_mean.item(),
+                          record_dict_path=dqn_record_dict_path,
+                          model_record_dict=model_record_dict,
+                          model_record_last_idx=model_record_last_idx,
+                          max_eval_reward_sum=max_eval_reward_sum)
 
     utils.save_json(dict_=losses_rewards_dict, json_path=os.path.join(best_model_dir_path, "Losses_Reward_dict.json"))
