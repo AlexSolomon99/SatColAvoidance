@@ -1,11 +1,8 @@
-import sys
 import copy
 
 import numpy as np
 
-sys.path.append(r'E:\Alex\UniBuc\MasterThesis\gym-satellite-ca')
-
-from gym_satellite_ca.envs import satDataClass
+from gym_satellite_ca.envs import sat_data_class
 
 
 class ObservationProcessing:
@@ -17,7 +14,7 @@ class ObservationProcessing:
     TCA_TIME_LAPSE = "tca_time_lapse"
     PRIMARY_SC_MASS = "primary_sc_mass"
 
-    def __init__(self, satellite_data: satDataClass.SatelliteData, tca_time_lapse_max_abs_val: float):
+    def __init__(self, satellite_data: sat_data_class.SatelliteData, tca_time_lapse_max_abs_val: float):
         self._satellite_data = satellite_data
         self._position_normaliser = copy.deepcopy(self.satellite_data.sma)
         self._velocity_normaliser = copy.deepcopy(self.satellite_data.sma * 1.0e-3)

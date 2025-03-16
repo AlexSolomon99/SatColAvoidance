@@ -1,23 +1,10 @@
-import copy
 import os
-import gymnasium as gym
-import matplotlib.pyplot as plt
-import numpy as np
-import datetime
 import torch
 import json
-import shutil
 
 import utils
 import models
-import dataprocessing
 import model_evaluation.dqn_evaluator as dqn_evaluator
-
-import sys
-
-sys.path.append(r'E:\Alex\UniBuc\MasterThesis\gym-satellite-ca')
-
-from gym_satellite_ca.envs import satDataClass
 
 
 class PolicyEvaluator(dqn_evaluator.DQNEvaluator):
@@ -30,7 +17,7 @@ class PolicyEvaluator(dqn_evaluator.DQNEvaluator):
     def instantiate_model(device, model_dir_path, model_file_path, model_evaluation_path):
         if not os.path.isdir(model_dir_path):
             print(f"The model directory was not found - {model_dir_path}")
-            sys.exit()
+            exit()
 
         if not os.path.isdir(model_evaluation_path):
             os.mkdir(model_evaluation_path)
