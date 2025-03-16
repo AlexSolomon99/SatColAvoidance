@@ -1,5 +1,4 @@
 import os
-import gymnasium as gym
 
 from ppo_alg.ppo import ppo
 from ppo_alg.ppo_utils import setup_logger_kwargs
@@ -12,7 +11,7 @@ seed = 0
 # 5 games per epoch
 steps_per_epoch = 5 * 1151
 # steps_per_epoch = 5000
-epochs = 2000
+epochs = 1000
 gamma = 0.99
 MODEL_NAME = "ppo_model"
 obs_dim = 9
@@ -23,7 +22,7 @@ LR_VF = 1e-3
 BASE = r"E:\Alex\UniBuc\MasterThesis\src"
 DATA_PATH = os.path.join(BASE, "data")
 RECORDED_MODELS_PATH = os.path.join(BASE, "recorded_models")
-PPO_METHODS_MODELS = os.path.join(RECORDED_MODELS_PATH, "ppo_models_kepl")
+PPO_METHODS_MODELS = os.path.join(RECORDED_MODELS_PATH, "ppo_models_kepl_discrete")
 # PPO_METHODS_MODELS = os.path.join(RECORDED_MODELS_PATH, "cartpole")
 
 if not os.path.isdir(RECORDED_MODELS_PATH):

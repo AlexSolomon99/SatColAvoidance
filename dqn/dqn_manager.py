@@ -2,20 +2,14 @@ import os
 import numpy as np
 import torch
 import gymnasium as gym
+import gym_satellite_ca
 import copy
 import datetime
 
 from models.dqn_nn import QNetwork
 from dqn_replay_memory import ReplayMemory
 import utils
-import dataprocessing
 import dqn_utils
-
-import sys
-
-sys.path.append(r'E:\Alex\UniBuc\MasterThesis\gym-satellite-ca')
-
-from gym_satellite_ca.envs import satDataClass
 
 # set device
 device = torch.device('cuda')
@@ -72,7 +66,7 @@ if not os.path.isdir(best_model_dir_path):
 init_sat = utils.get_sat_data_env(sat_data_config)
 
 # setting up the environment
-env = gym.make('gym_satellite_ca:gym_satellite_ca/CollisionAvoidance-v0',
+env = gym.make("CollisionAvoidanceEnv-v0",
                satellite=init_sat)
 
 # # set up the observation processing class
@@ -107,7 +101,7 @@ dqn_utils_class = dqn_utils.DQNUtils(observation_processing=None, memory=memory,
 
 # set up training variables
 steps_done = 0
-num_episodes = 2000
+num_episodes = 2
 max_eval_reward_sum = -np.inf
 best_policy = copy.deepcopy(policy_net)
 losses_rewards_dict = {"Rewards": [], "Losses": []}

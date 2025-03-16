@@ -4,13 +4,10 @@ import json
 import copy
 import torch
 import gymnasium as gym
+import gym_satellite_ca
 import dataprocessing
 
-import sys
-
-sys.path.append(r'E:\Alex\UniBuc\MasterThesis\gym-satellite-ca')
-
-from gym_satellite_ca.envs import satDataClass
+from gym_satellite_ca.envs import sat_data_class
 
 
 def read_json(json_path: str):
@@ -29,7 +26,7 @@ def save_json(dict_: dict, json_path: str):
 def get_sat_data_env(sat_data_config_path: str):
     sat_data_config = read_json(json_path=sat_data_config_path)
 
-    iss_satellite = satDataClass.SatelliteData(**sat_data_config)
+    iss_satellite = sat_data_class.SatelliteData(**sat_data_config)
     iss_satellite.change_angles_to_radians()
     iss_satellite.set_random_tran()
 
@@ -41,8 +38,7 @@ def set_up_environment(sat_data_config):
     init_sat = get_sat_data_env(sat_data_config)
 
     # setting up the environment
-    env = gym.make('gym_satellite_ca:gym_satellite_ca/CollisionAvoidance-v0',
-                   satellite=init_sat)
+    env = gym.make("CollisionAvoidanceEnv-v0", satellite=init_sat)
 
     # set up the observation processing class
     tca_time_lapse_max_abs_val = env.observation_space['tca_time_lapse'].high[0]
@@ -58,7 +54,7 @@ def set_up_kepl_environment(sat_data_config):
     init_sat = get_sat_data_env(sat_data_config)
 
     # setting up the environment
-    env = gym.make('gym_satellite_ca:gym_satellite_ca/CollisionAvoidance-v0',
+    env = gym.make("CollisionAvoidanceEnv-v0",
                    satellite=init_sat)
 
     return env

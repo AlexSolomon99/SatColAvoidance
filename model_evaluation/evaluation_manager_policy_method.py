@@ -4,12 +4,6 @@ import datetime
 
 import policy_evaluator
 
-import sys
-
-sys.path.append(r'E:\Alex\UniBuc\MasterThesis\gym-satellite-ca')
-
-from gym_satellite_ca.envs import satDataClass
-
 # set device
 device = torch.device('cuda')
 

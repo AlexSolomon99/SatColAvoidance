@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from torch.optim import Adam
 import gymnasium as gym
+import gym_satellite_ca
 import time
 import core
 from ppo_alg.logx import EpochLogger

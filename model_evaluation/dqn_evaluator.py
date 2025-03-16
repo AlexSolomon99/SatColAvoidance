@@ -1,6 +1,7 @@
 import copy
 import os
 import gymnasium as gym
+import gym_satellite_ca
 import matplotlib.pyplot as plt
 import numpy as np
 import datetime
@@ -10,13 +11,8 @@ import shutil
 
 import utils
 import models
-import dataprocessing
 
 import sys
-
-sys.path.append(r'E:\Alex\UniBuc\MasterThesis\gym-satellite-ca')
-
-from gym_satellite_ca.envs import satDataClass
 
 
 class DQNEvaluator:
@@ -46,7 +42,7 @@ class DQNEvaluator:
         init_sat = utils.get_sat_data_env(sat_data_config)
 
         # setting up the environment
-        env = gym.make('gym_satellite_ca:gym_satellite_ca/CollisionAvoidance-v0',
+        env = gym.make("CollisionAvoidanceEnv-v0",
                        satellite=init_sat)
 
         # set up the observation processing class
