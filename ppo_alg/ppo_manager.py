@@ -1,4 +1,5 @@
 import os
+import gym_satellite_ca
 
 from ppo_alg.ppo import ppo
 from ppo_alg.ppo_utils import setup_logger_kwargs
