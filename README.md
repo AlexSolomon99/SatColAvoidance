@@ -7,6 +7,10 @@ different algorithms:
 #### 2. DQN
 #### 3. REINFORCE
 
+For a more detailed description of the analysis done in this repo, please check out our paper here:
+[Collision Avoidance and Return Manoeuvre Optimisation for
+Low-Thrust Satellites Using Reinforcement Learning](https://www.scitepress.org/Papers/2025/132490/132490.pdf) 
+
 Corresponding Environment
 ------------------
 The environment which the current repo is referencing is https://github.com/AlexSolomon99/SatColAvoidEnv.
